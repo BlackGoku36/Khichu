@@ -7,6 +7,14 @@
 
 #define TOKEN_POOL_SIZE 1000
 
+void print_token(token token){
+	char const* token_str[] = {"INT_64",
+	"PLUS", "MINUS", "STAR", "SLASH",
+	"LEFT_PAREN", "RIGHT_PAREN",
+	"END_OF_FILE"};
+	printf("Token, type: %s, value: %llu\n", token_str[token.type], token.val);
+}
+
 char peek(char* source, scanner_status scan_status){
 	return source[scan_status.current];
 }
@@ -69,6 +77,6 @@ token_pool scanner(char* source, uint32_t len){
 				}
 		}
 	}
-	produce_token(&token_pool, EOF, 0);
+	produce_token(&token_pool, END_OF_FILE, 0);
 	return token_pool;
 }

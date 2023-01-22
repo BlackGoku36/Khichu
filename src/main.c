@@ -22,9 +22,8 @@ int main(void){
 	fclose(file_ptr);
 
 	token_pool tokens = scanner(buffer, numbytes);
-	printf("tokens: %d\n", tokens.cursor);
 	for (uint32_t i = 0; i < tokens.cursor; i++) {
-		printf("token type: %d, value: %llu\n", tokens.pool[i].type, tokens.pool[i].val);
+		print_token(tokens.pool[i]);
 	}
 
 	free(buffer);
