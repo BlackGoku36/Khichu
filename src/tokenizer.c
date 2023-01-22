@@ -7,16 +7,16 @@
 
 #define TOKEN_POOL_SIZE 1000
 
-char peek(char* source, ScannerStatus scan_status){
+char peek(char* source, scanner_status scan_status){
 	return source[scan_status.current];
 }
 
-char consume(char* source, ScannerStatus* scan_status){
+char consume(char* source, scanner_status* scan_status){
 	return source[scan_status->current++];
 }
 
-void produce_token(TokenPool* pool, enum TokenType type, uint64_t val){
-	pool->pool[pool->cursor] = (Token){.type = type, .val = val};
+void produce_token(token_pool* pool, token_type type, uint64_t val){
+	pool->pool[pool->cursor] = (token){.type = type, .val = val};
 	pool->cursor += 1;
 }
 
@@ -24,7 +24,7 @@ bool is_digit(char c){
 	return c >= '0' && c <= '9';
 }
 
-uint64_t get_number(char* source, ScannerStatus* scan_status){
+uint64_t get_number(char* source, scanner_status* scan_status){
 	uint32_t start = scan_status->start;
 	while (is_digit(peek(source, *scan_status))) {
 		consume(source, scan_status);
@@ -36,11 +36,11 @@ uint64_t get_number(char* source, ScannerStatus* scan_status){
 	return number;
 }
 
-TokenPool scanner(char* source, uint32_t len){
-	ScannerStatus scan_status = {};
+token_pool scanner(char* source, uint32_t len){
+	scanner_status scan_status = {};
 	
-	TokenPool token_pool = {};
-	token_pool.pool = calloc(TOKEN_POOL_SIZE, sizeof(Token));
+	token_pool token_pool = {};
+	token_pool.pool = calloc(TOKEN_POOL_SIZE, sizeof(token));
 	
 	while (scan_status.current < len) {
 		scan_status.start = scan_status.current;

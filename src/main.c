@@ -21,7 +21,7 @@ int main(void){
 	fread(buffer, sizeof(char), numbytes, file_ptr);
 	fclose(file_ptr);
 
-	TokenPool tokens = scanner(buffer, numbytes);
+	token_pool tokens = scanner(buffer, numbytes);
 	printf("tokens: %d\n", tokens.cursor);
 	for (uint32_t i = 0; i < tokens.cursor; i++) {
 		printf("token type: %d, value: %llu\n", tokens.pool[i].type, tokens.pool[i].val);

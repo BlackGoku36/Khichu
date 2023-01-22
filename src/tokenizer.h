@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-enum TokenType{
+typedef enum token_type{
 	IDENTIFIER,
 	FLOAT_32, FLOAT_64, INT_8, INT_16, INT_32, INT_64, UINT_8, UINT_16, UINT_32, UINT_64,
 	PLUS, MINUS, STAR, SLASH,
@@ -9,22 +9,22 @@ enum TokenType{
 	SEMICOLON, COLON,
 	LET,
 	EOF,
-};
+}token_type;
 
 typedef struct{
-	enum TokenType type;
+	token_type type;
 	uint64_t val;
-}Token;
+}token;
 
 typedef struct{
-	Token* pool;
+	token* pool;
 	uint32_t cursor;
-}TokenPool;
+}token_pool;
 
 typedef struct{
 	uint32_t start;
 	uint32_t current;
 	uint32_t line;
-}ScannerStatus;
+}scanner_status;
 
-TokenPool scanner(char* source, uint32_t len);
+token_pool scanner(char* source, uint32_t len);
