@@ -8,7 +8,8 @@ typedef enum token_type{
 
 typedef struct{
 	token_type type;
-	uint64_t val;
+	uint32_t loc_start;
+	uint32_t loc_end;
 }token;
 
 typedef struct{
@@ -22,5 +23,5 @@ typedef struct{
 	uint32_t line;
 }scanner_status;
 
-void print_token(token token);
+void print_token(char* source, token token);
 token_pool scanner(char* source, uint32_t len);

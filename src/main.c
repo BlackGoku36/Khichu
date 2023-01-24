@@ -23,7 +23,7 @@ int main(void){
 
 	token_pool tokens = scanner(buffer, numbytes);
 	for (uint32_t i = 0; i < tokens.cursor; i++) {
-		print_token(tokens.pool[i]);
+		print_token(buffer, tokens.pool[i]);
 	}
 
 	free(buffer);
