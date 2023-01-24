@@ -8,10 +8,17 @@
 #define TOKEN_POOL_SIZE 1000
 
 void print_token(char* source, token token){
-	char const* token_str[] = {"INT_64",
-	"PLUS", "MINUS", "STAR", "SLASH",
-	"LEFT_PAREN", "RIGHT_PAREN",
-	"END_OF_FILE"};
+	char const* token_str[] = {
+		"INT_64",
+		"PLUS", "MINUS", "STAR", "SLASH",
+		"EQUAL", "LESSER", "GREATER",
+		"LESSER_LESSER", "GREATER_GREATER",
+		"EQUAL_EQUAL", "LESSER_EQUAL", "GREATER_EQUAL",
+		"PLUS_EQUAL", "MINUS_EQUAL", "STAR_EQUAL", "SLASH_EQUAL",
+		"COLON", "SEMICOLON", "DOT", "COMMA",
+		"LEFT_PAREN", "RIGHT_PAREN", "LEFT_BRACE", "RIGHT_BRACE", "LEFT_BRACKET", "RIGHT_BRACKET",
+		"END_OF_FILE",
+	};
 	printf("Token, type: %s, str:", token_str[token.type]);
 	for (uint32_t i = token.loc_start; i < token.loc_end; i++) {
 			printf("%c", source[i]);
@@ -25,6 +32,12 @@ char peek(char* source, scanner_status scan_status){
 
 char consume(char* source, scanner_status* scan_status){
 	return source[scan_status->current++];
+}
+
+bool match_consume(char* source, scanner_status* scan_status, char match){
+	if(peek(source, *scan_status) != match) return false;
+	consume(source, scan_status);
+	return true;
 }
 
 void produce_token(token_pool* pool, token_type type, uint32_t loc_start, uint32_t loc_end){
@@ -80,17 +93,53 @@ token_pool scanner(char* source, uint32_t len){
 		scan_status.start = scan_status.current;
 		char c = consume(source, &scan_status);
 		switch (c) {
-			case '+': produce_token(&token_pool, PLUS, scan_status.start, scan_status.start+1); break;
-			case '-': produce_token(&token_pool, MINUS, scan_status.start, scan_status.start+1); break;
-			case '*': produce_token(&token_pool, STAR, scan_status.start, scan_status.start+1); break;
-			case '/': produce_token(&token_pool, SLASH, scan_status.start, scan_status.start+1); break;
-			// case ':': produce_token(&token_pool, COLON, 0); break;
+			case '+': {
+				token_type type = match_consume(source, &scan_status, '=') ? PLUS_EQUAL : PLUS;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current);
+				break;
+			}
+			case '-': {
+				token_type type = match_consume(source, &scan_status, '=') ? MINUS_EQUAL : MINUS;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current);
+				break;
+			}
+			case '*': {
+				token_type type = match_consume(source, &scan_status, '=') ? STAR_EQUAL : STAR;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current);
+				break;
+			}
+			case '/': {
+				token_type type = match_consume(source, &scan_status, '=') ? SLASH_EQUAL : SLASH;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current);
+				break;
+			}
+			case '=': {
+				token_type type = match_consume(source, &scan_status, '=') ? EQUAL_EQUAL : EQUAL;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current);
+				break;
+			}
+			case '<': {
+				token_type type = match_consume(source, &scan_status, '=') ? LESSER_EQUAL : LESSER;
+				if(type == LESSER) type = match_consume(source, &scan_status, '<') ? LESSER_LESSER : LESSER;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current);
+				break;
+			}
+			case '>': {
+				token_type type = match_consume(source, &scan_status, '=') ? GREATER_EQUAL : GREATER;
+				if(type == GREATER) type = match_consume(source, &scan_status, '>') ? GREATER_GREATER : GREATER;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current);
+				break;
+			}
+			case ':': produce_token(&token_pool, COLON, scan_status.start, scan_status.start+1); break;
 			case '(': produce_token(&token_pool, LEFT_PAREN, scan_status.start, scan_status.start+1); break;
 			case ')': produce_token(&token_pool, RIGHT_PAREN, scan_status.start, scan_status.start+1); break;
-			// case '{': produce_token(&token_pool, LEFT_BRACE, 0); break;
-			// case '}': produce_token(&token_pool, RIGHT_BRACE, 0); break;
-			// case '[': produce_token(&token_pool, LEFT_BRACKET, 0); break;
-			// case ']': produce_token(&token_pool, RIGHT_BRACKET, 0); break;
+			case '{': produce_token(&token_pool, LEFT_BRACE, scan_status.start, scan_status.start+1); break;
+			case '}': produce_token(&token_pool, RIGHT_BRACE, scan_status.start, scan_status.start+1); break;
+			case '[': produce_token(&token_pool, LEFT_BRACKET, scan_status.start, scan_status.start+1); break;
+			case ']': produce_token(&token_pool, RIGHT_BRACKET, scan_status.start, scan_status.start+1); break;
+			case '.': produce_token(&token_pool, DOT, scan_status.start, scan_status.start+1); break;
+			case ';': produce_token(&token_pool, SEMICOLON, scan_status.start, scan_status.start+1); break;
+			case ',': produce_token(&token_pool, COMMA, scan_status.start, scan_status.start+1); break;
 			case ' ': break;
 			case '\r': break;
 			case '\t': break;
