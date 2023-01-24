@@ -43,6 +43,33 @@ uint32_t get_number_str_len(char* source, scanner_status* scan_status){
 	return scan_status->current;
 }
 
+void report_error(char* source, uint32_t line, uint32_t at, const char* message){
+	printf("Error at line: %d, %s\n", line+1, message);
+	uint32_t error_line_offset = 0;
+	uint32_t line_counter = 0;
+	// Get offset to the line containing error.
+	while (source[error_line_offset] != '\0') {
+		if(line_counter == line) break;
+		if(source[error_line_offset] == '\n') line_counter++;
+		error_line_offset += 1;
+	}
+	// Print the line
+	uint32_t i = error_line_offset;
+	while (source[i] != '\n' && source[i] != '\0') {
+		printf("%c", source[i]);
+		i++;
+	}
+	printf("\n");
+	// Print the fancy pointer
+	for (uint32_t j = error_line_offset; j < i; j++) {
+		if(j == at)
+			printf("^");
+		else
+			printf("-");
+	}
+	printf("\n");
+}
+
 token_pool scanner(char* source, uint32_t len){
 	scanner_status scan_status = {};
 	
@@ -72,7 +99,7 @@ token_pool scanner(char* source, uint32_t len){
 				if(is_digit(c)){
 					produce_token(&token_pool, INT_64, scan_status.start, get_number_str_len(source, &scan_status));
 				}else{
-					printf("Unexpected character %c at line %d\n", c, scan_status.line);
+					report_error(source, scan_status.line, scan_status.start, "Unexpected char found.");
 				}
 		}
 	}
