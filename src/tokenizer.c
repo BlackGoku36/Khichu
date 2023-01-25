@@ -225,7 +225,7 @@ token_pool scanner(char* source, uint32_t len){
 			case ',': produce_token(&token_pool, COMMA, scan_status.start, scan_status.current); break;
 			case '"':{
 				uint32_t loc_end = parse_string(source, &scan_status);
-				produce_token(&token_pool, STRING, scan_status.start, loc_end);
+				produce_token(&token_pool, STRING, scan_status.start+1, loc_end-1);
 			}
 			case ' ': break;
 			case '\r': break;
