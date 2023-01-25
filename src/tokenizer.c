@@ -9,7 +9,7 @@
 
 void print_token(char* source, token token){
 	char const* token_str[] = {
-		"INT_64",
+		"INT", "FLOAT",
 		"STRING",
 		"PLUS", "MINUS", "STAR", "SLASH",
 		"EQUAL", "LESSER", "GREATER",
@@ -31,6 +31,10 @@ char peek(char* source, scanner_status scan_status){
 	return source[scan_status.current];
 }
 
+char peek_next(char* source, scanner_status scan_status){
+	return source[scan_status.current + 1];
+}
+
 char consume(char* source, scanner_status* scan_status){
 	return source[scan_status->current++];
 }
@@ -50,9 +54,17 @@ bool is_digit(char c){
 	return c >= '0' && c <= '9';
 }
 
-uint32_t get_number_str_len(char* source, scanner_status* scan_status){
+uint32_t parse_number(char* source, scanner_status* scan_status, bool* is_float){
 	while (is_digit(peek(source, *scan_status))) {
 		consume(source, scan_status);
+	}
+	if(peek(source, *scan_status) == '.' && is_digit(peek_next(source, *scan_status))){
+		consume(source, scan_status); // Consume .
+		
+		*is_float = true;
+		while (is_digit(peek(source, *scan_status))) {
+			consume(source, scan_status);
+		}
 	}
 	return scan_status->current;
 }
@@ -173,7 +185,13 @@ token_pool scanner(char* source, uint32_t len){
 			case '\n': scan_status.line++; break;
 			default:
 				if(is_digit(c)){
-					produce_token(&token_pool, INT_64, scan_status.start, get_number_str_len(source, &scan_status));
+					bool is_float = false;
+					uint32_t toc_end = parse_number(source, &scan_status, &is_float);
+					if(is_float){
+						produce_token(&token_pool, FLOAT, scan_status.start, toc_end);
+					}else{
+						produce_token(&token_pool, INT, scan_status.start, toc_end);
+					}
 				}else{
 					report_error(source, scan_status.line, scan_status.start, "Unexpected char found.");
 				}

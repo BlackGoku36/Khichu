@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 typedef enum token_type{
-	INT_64,
+	INT, FLOAT,
 	STRING,
 	PLUS, MINUS, STAR, SLASH,
 	EQUAL, LESSER, GREATER,
