@@ -130,16 +130,16 @@ token_pool scanner(char* source, uint32_t len){
 				produce_token(&token_pool, type, scan_status.start, scan_status.current);
 				break;
 			}
-			case ':': produce_token(&token_pool, COLON, scan_status.start, scan_status.start+1); break;
-			case '(': produce_token(&token_pool, LEFT_PAREN, scan_status.start, scan_status.start+1); break;
-			case ')': produce_token(&token_pool, RIGHT_PAREN, scan_status.start, scan_status.start+1); break;
-			case '{': produce_token(&token_pool, LEFT_BRACE, scan_status.start, scan_status.start+1); break;
-			case '}': produce_token(&token_pool, RIGHT_BRACE, scan_status.start, scan_status.start+1); break;
-			case '[': produce_token(&token_pool, LEFT_BRACKET, scan_status.start, scan_status.start+1); break;
-			case ']': produce_token(&token_pool, RIGHT_BRACKET, scan_status.start, scan_status.start+1); break;
-			case '.': produce_token(&token_pool, DOT, scan_status.start, scan_status.start+1); break;
-			case ';': produce_token(&token_pool, SEMICOLON, scan_status.start, scan_status.start+1); break;
-			case ',': produce_token(&token_pool, COMMA, scan_status.start, scan_status.start+1); break;
+			case ':': produce_token(&token_pool, COLON, scan_status.start, scan_status.current); break;
+			case '(': produce_token(&token_pool, LEFT_PAREN, scan_status.start, scan_status.current); break;
+			case ')': produce_token(&token_pool, RIGHT_PAREN, scan_status.start, scan_status.current); break;
+			case '{': produce_token(&token_pool, LEFT_BRACE, scan_status.start, scan_status.current); break;
+			case '}': produce_token(&token_pool, RIGHT_BRACE, scan_status.start, scan_status.current); break;
+			case '[': produce_token(&token_pool, LEFT_BRACKET, scan_status.start, scan_status.current); break;
+			case ']': produce_token(&token_pool, RIGHT_BRACKET, scan_status.start, scan_status.current); break;
+			case '.': produce_token(&token_pool, DOT, scan_status.start, scan_status.current); break;
+			case ';': produce_token(&token_pool, SEMICOLON, scan_status.start, scan_status.current); break;
+			case ',': produce_token(&token_pool, COMMA, scan_status.start, scan_status.current); break;
 			case ' ': break;
 			case '\r': break;
 			case '\t': break;
