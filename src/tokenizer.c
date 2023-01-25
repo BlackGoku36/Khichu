@@ -135,7 +135,7 @@ uint32_t parse_identifier(char* source, scanner_status* scan_status, token_type*
 
 	*type = IDENTIFIER;
 	for (uint32_t i = 0; i < 18; i++) {
-		bool found = match_string(source, key_str[0], scan_status->start, scan_status->current);
+		bool found = match_string(source, key_str[i], scan_status->start, scan_status->current);
 		if(found){
 			*type = key_tok[i];
 			break;
