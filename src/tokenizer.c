@@ -110,7 +110,15 @@ token_pool scanner(char* source, uint32_t len){
 			}
 			case '/': {
 				token_type type = match_consume(source, &scan_status, '=') ? SLASH_EQUAL : SLASH;
-				produce_token(&token_pool, type, scan_status.start, scan_status.current);
+				if(type == SLASH && match_consume(source, &scan_status, '/')){
+					while (peek(source, scan_status) != '\n' && scan_status.current < len) {
+						consume(source, &scan_status);
+					}
+					break;
+				}else{
+					produce_token(&token_pool, type, scan_status.start, scan_status.current);
+					break;
+				}
 				break;
 			}
 			case '=': {
