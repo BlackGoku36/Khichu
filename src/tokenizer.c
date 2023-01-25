@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
 
 #define TOKEN_POOL_SIZE 1000
 
@@ -18,6 +19,9 @@ void print_token(char* source, token token){
 		"PLUS_EQUAL", "MINUS_EQUAL", "STAR_EQUAL", "SLASH_EQUAL",
 		"COLON", "SEMICOLON", "DOT", "COMMA",
 		"LEFT_PAREN", "RIGHT_PAREN", "LEFT_BRACE", "RIGHT_BRACE", "LEFT_BRACKET", "RIGHT_BRACKET",
+		"IDENTIFIER",
+		"LET", "CONST", "STRUCT", "FN", "IF", "ELSE", "FOR", "WHILE",
+		"U8", "U16", "U32", "U64", "I8", "I16", "I32", "I64", "F32", "F64",
 		"END_OF_FILE",
 	};
 	printf("Token, type: %s, str:", token_str[token.type]);
@@ -52,6 +56,14 @@ void produce_token(token_pool* pool, token_type type, uint32_t loc_start, uint32
 
 bool is_digit(char c){
 	return c >= '0' && c <= '9';
+}
+
+bool is_alpha(char c){
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+bool is_alpha_numeric(char c){
+	return is_alpha(c) || is_digit(c);
 }
 
 uint32_t parse_number(char* source, scanner_status* scan_status, bool* is_float){
@@ -94,6 +106,42 @@ void report_error(char* source, uint32_t line, uint32_t at, const char* message)
 			printf("-");
 	}
 	printf("\n");
+}
+
+bool match_string(char* source, char* str1, uint32_t loc_start, uint32_t loc_end){
+	uint32_t j = 0;
+	if(strlen(str1) != (loc_end-loc_start)) return false;
+
+	for (uint32_t i = loc_start; i < loc_end; i++) {
+		if(str1[j] != source[i]) return false;
+		j++;
+	}
+	return true;
+}
+
+uint32_t parse_identifier(char* source, scanner_status* scan_status, token_type* type){
+	char* key_str[] = {
+		"let", "const", "struct", "fn", "if", "else", "for", "while",
+		"u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64"
+	}; 
+	const token_type key_tok[] = {
+		LET, CONST, STRUCT, FN, IF, ELSE, FOR, WHILE,
+		U8, U16, U32, U64, I8, I16, I32, I64, F32, F64,
+	};
+
+	while (is_alpha_numeric(peek(source, *scan_status))) {
+		consume(source, scan_status);
+	}
+
+	*type = IDENTIFIER;
+	for (uint32_t i = 0; i < 18; i++) {
+		bool found = match_string(source, key_str[0], scan_status->start, scan_status->current);
+		if(found){
+			*type = key_tok[i];
+			break;
+		}
+	}
+	return scan_status->current;
 }
 
 uint32_t parse_string(char* source, scanner_status* scan_status){
@@ -192,7 +240,12 @@ token_pool scanner(char* source, uint32_t len){
 					}else{
 						produce_token(&token_pool, INT, scan_status.start, toc_end);
 					}
-				}else{
+				}else if(is_alpha(c)){
+					token_type type;
+					uint32_t toc_end = parse_identifier(source, &scan_status, &type);
+					produce_token(&token_pool, type, scan_status.start, toc_end);
+				}
+				else{
 					report_error(source, scan_status.line, scan_status.start, "Unexpected char found.");
 				}
 		}
