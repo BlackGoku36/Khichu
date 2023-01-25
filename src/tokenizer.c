@@ -10,6 +10,7 @@
 void print_token(char* source, token token){
 	char const* token_str[] = {
 		"INT_64",
+		"STRING",
 		"PLUS", "MINUS", "STAR", "SLASH",
 		"EQUAL", "LESSER", "GREATER",
 		"LESSER_LESSER", "GREATER_GREATER",
@@ -83,6 +84,20 @@ void report_error(char* source, uint32_t line, uint32_t at, const char* message)
 	printf("\n");
 }
 
+uint32_t parse_string(char* source, scanner_status* scan_status){
+	uint32_t start = scan_status->start;
+	while (peek(source, *scan_status) != '"' && peek(source, *scan_status) != '\0'){
+		if(peek(source, *scan_status) == '\n') scan_status->line++;
+		consume(source, scan_status);
+	}
+	if(peek(source, *scan_status) == '\0'){
+		report_error(source, scan_status->line, start, "Unterminated String found");
+	}
+	// Consume the closing '"'.
+	consume(source, scan_status);
+	return scan_status->current;
+}
+
 token_pool scanner(char* source, uint32_t len){
 	scanner_status scan_status = {};
 	
@@ -148,6 +163,10 @@ token_pool scanner(char* source, uint32_t len){
 			case '.': produce_token(&token_pool, DOT, scan_status.start, scan_status.current); break;
 			case ';': produce_token(&token_pool, SEMICOLON, scan_status.start, scan_status.current); break;
 			case ',': produce_token(&token_pool, COMMA, scan_status.start, scan_status.current); break;
+			case '"':{
+				uint32_t loc_end = parse_string(source, &scan_status);
+				produce_token(&token_pool, STRING, scan_status.start, loc_end);
+			}
 			case ' ': break;
 			case '\r': break;
 			case '\t': break;
