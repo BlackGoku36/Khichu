@@ -1,6 +1,1 @@
-let x:f32 = 0.45;
-
-if x >= 9.0 {
- // laallalala
- print("Hello world!");
-}
+4+5/2+3
