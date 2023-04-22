@@ -6,6 +6,9 @@
 
 #include "parser.h"
 
+token* tokens;
+char* source;
+
 ast_node* make_ast_node(op_enum op, ast_node* left, ast_node* right, uint32_t val){
 	ast_node* node = (ast_node*) malloc(sizeof(ast_node));
 	assert(node != NULL);

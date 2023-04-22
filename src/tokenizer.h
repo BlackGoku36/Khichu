@@ -1,3 +1,6 @@
+#ifndef tokenizer_h
+#define tokenizer_h
+
 #include <stdint.h>
 
 typedef enum token_type{
@@ -35,3 +38,5 @@ typedef struct{
 
 void print_token(char* source, token token);
 token_pool scanner(char* source, uint32_t len);
+
+#endif
