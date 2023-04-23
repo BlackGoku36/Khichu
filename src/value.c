@@ -39,9 +39,9 @@ void deinit_value_array(value_array* value_array){
 
 void print_value(value value){
 	switch (value.type) {
-		case INT_VAL: printf("%d\n", value.as.int_number); break;
-		case FLOAT_VAL: printf("%f\n", value.as.float_number); break;
-		case BOOL_VAL: printf("%d\n", value.as.boolean); break;
+		case INT_VAL: printf("%d (INT)\n", value.as.int_number); break;
+		case FLOAT_VAL: printf("%f (FLOAT)\n", value.as.float_number); break;
+		case BOOL_VAL: printf("%d (BOOL)\n", value.as.boolean); break;
 	}
 }
 

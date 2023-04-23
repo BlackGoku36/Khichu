@@ -12,6 +12,39 @@ token* tokens;
 char* source;
 chunk* compiling_chunk;
 
+void parser_report_error(char* source, uint32_t from, uint32_t to, const char* message, bool panic){
+	uint32_t i = 0;
+	uint32_t line = 0;
+	uint32_t line_start = 0;
+	while (source[i] != '\0') {
+		if(i == from) break;
+		if(source[i] == '\n'){
+			line += 1;
+			line_start = i;
+		}
+		i += 1;
+	}
+	printf("Error at line: %d, %s\n", line, message);
+	uint32_t j = line_start;
+	while (source[j] != '\n' && source[j] != '\0') {
+		printf("%c", source[j]);
+		j += 1;
+	}
+	printf("\n");
+	j = line_start;
+	while (source[j] != '\n' && source[j] != '\0') {
+		if(j >= from && j <= to - 1){
+			printf("^");
+		}else{
+			printf("-");
+		}
+		j += 1;
+	}
+	printf("\n");
+	if(panic) exit(EXIT_FAILURE);
+}
+
+
 ast_node* make_ast_node(op_enum op, ast_node* left, ast_node* right, value val){
 	ast_node* node = (ast_node*) malloc(sizeof(ast_node));
 	assert(node != NULL);
@@ -53,23 +86,19 @@ token parser_consume(parser_status* ps){
 	return tok;
 }
 
-void parser_match_consume(parser_status* ps, token_type token, char* error){
-	if(match(*ps, token)){
+void parser_match_consume(parser_status* ps, token_type tok, const char* error, token error_at){
+	if(match(*ps, tok)){
 		parser_consume(ps);
 	}else{
-		printf("Error: %s\n", error);
+		parser_report_error(source, error_at.loc_start, error_at.loc_end, error, false);
 	}
 }
 
 int32_t parse_int(char* source, uint32_t from, uint32_t to){
     int32_t result = 0;
-    printf("str: ");
     for(uint32_t i = from; i < to; i++){
-    	//TODO: Put check source[i] >= '0' && source[i] <= '9' and return some error
         result = result * 10 + (source[i] - '0');
-        printf("%c", source[i]);
     }
-    printf("\n");
     return result;
 }
 
@@ -105,27 +134,27 @@ ast_node* primary(parser_status* parser_status){
 	if(match(*parser_status, INT)){
 		parser_consume(parser_status);
 		token int_token = prev(*parser_status);
-		//TODO: Put some error handling in-case parse_int fail
 		int32_t integer = parse_int(source, int_token.loc_start, int_token.loc_end);
 		return make_leaf_node(INT_LIT, (value){.type = INT_VAL, .as.int_number = integer});
 	}
 	if(match(*parser_status, FLOAT)){
 		parser_consume(parser_status);
 		token float_token = prev(*parser_status);
-		//TODO: Put some error handling in-case parse_float fail
 		float float_num = parse_float(source, float_token.loc_start, float_token.loc_end);
 		return make_leaf_node(FLOAT_LIT, (value){.type = FLOAT_VAL, .as.float_number = float_num});
 	}
 	if(match(*parser_status, LEFT_PAREN)){
+		uint32_t pos = parser_status->current;
 		parser_consume(parser_status);
 		ast_node* expr = expression(parser_status);
-		parser_match_consume(parser_status, RIGHT_PAREN, "Expected ')' after expression");
+		parser_match_consume(parser_status, RIGHT_PAREN, "Expected ')' after expression", tokens[pos]);
 		return expr;
 	}
 
-	//TODO: Actually do some error handling
-	printf("Unknow literal found!\n");
-	exit(EXIT_FAILURE);
+	token current = parser_peek(*parser_status);
+	parser_report_error(source, current.loc_start, current.loc_end, "Unknow literal found!", true);
+
+	return NULL; // Unreachable
 }
 
 ast_node* unary(parser_status* parser_status){
@@ -183,6 +212,40 @@ void end_parser(){
 	write_chunk(current_chunk(), OP_RETURN);
 }
 
+void analysis(ast_node* node){
+	if(node->left){
+		analysis(node->left);
+	}
+	if(node->right){
+		analysis(node->right);
+	}
+
+	switch (node->op) {
+		case ADD:
+		case SUB:
+		case MULT:
+		case DIV:{
+			if(node->left->val.type != node->right->val.type){
+				printf("Type miss-match between: ");
+				switch (node->left->val.type) {
+					case INT_VAL: printf("%d (INT)", node->left->val.as.int_number); break;
+					case FLOAT_VAL: printf("%f (FLOAT)", node->left->val.as.float_number); break;
+					case BOOL_VAL: printf("%d (BOOL)", node->left->val.as.boolean); break;
+				}
+				printf(" and ");
+				switch (node->right->val.type) {
+					case INT_VAL: printf("%d (INT)", node->right->val.as.int_number); break;
+					case FLOAT_VAL: printf("%f (FLOAT)", node->right->val.as.float_number); break;
+					case BOOL_VAL: printf("%d (BOOL)", node->right->val.as.boolean); break;
+				}
+				printf("\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+		default:;
+	}
+}
+
 void code_gen(ast_node* node){
 	uint32_t right_val = 0;
 	uint32_t left_val = 0;
@@ -234,7 +297,8 @@ void parse(token_pool* toks, char* code, chunk* chunk){
 	parser_status parser_status = {};
 
 	ast_node* start = expression(&parser_status);
-	parser_match_consume(&parser_status, END_OF_FILE, "Expected end of expression");
+	parser_match_consume(&parser_status, END_OF_FILE, "Expected end of expression", parser_peek(parser_status));
+	analysis(start);
 	code_gen(start);
 	end_parser();
 }

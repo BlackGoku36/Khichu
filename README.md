@@ -2,10 +2,9 @@
 
 ## TODO
 
-- Add error handling (including line number, runtime/compile time)
-- Errors:
-	- When integer/float are calculated with each other
 - Implement boolean operations: ==, !=, >=, <=, !x
+- Fix the code to make value useable like generics, instead of copy pasting switch-case like 100s time
+- Push source code info like line number and start/end pointer of token in source code.
 
 ## Compile and Run
 

@@ -4,6 +4,8 @@
 #include "tokenizer.h"
 #include "chunk.h"
 #include "value.h"
+#include "stdio.h"
+#include <stdlib.h>
 
 typedef struct{
 	uint32_t current;
