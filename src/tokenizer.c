@@ -72,7 +72,7 @@ uint32_t parse_number(char* source, scanner_status* scan_status, bool* is_float)
 	}
 	if(peek(source, *scan_status) == '.' && is_digit(peek_next(source, *scan_status))){
 		consume(source, scan_status); // Consume .
-		
+
 		*is_float = true;
 		while (is_digit(peek(source, *scan_status))) {
 			consume(source, scan_status);
@@ -123,7 +123,7 @@ uint32_t parse_identifier(char* source, scanner_status* scan_status, token_type*
 	char* key_str[] = {
 		"let", "const", "struct", "fn", "if", "else", "for", "while",
 		"u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64"
-	}; 
+	};
 	const token_type key_tok[] = {
 		LET, CONST, STRUCT, FN, IF, ELSE, FOR, WHILE,
 		U8, U16, U32, U64, I8, I16, I32, I64, F32, F64,
@@ -160,10 +160,10 @@ uint32_t parse_string(char* source, scanner_status* scan_status){
 
 token_pool scanner(char* source, uint32_t len){
 	scanner_status scan_status = {};
-	
+
 	token_pool token_pool = {};
 	token_pool.pool = calloc(TOKEN_POOL_SIZE, sizeof(token));
-	
+
 	while (scan_status.current < len) {
 		scan_status.start = scan_status.current;
 		char c = consume(source, &scan_status);

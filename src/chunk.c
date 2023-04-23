@@ -1,4 +1,5 @@
 #include "chunk.h"
+#include "value.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
@@ -12,6 +13,7 @@ chunk init_chunk(){
 		.len = 0,
 		.capacity = INIT_CAPACITY,
 		.code = code,
+		.constants = init_value_array(),
 	};
 }
 
@@ -30,23 +32,51 @@ void write_chunk(chunk* chunk, uint8_t op_code){
 	chunk->len += 1;
 }
 
+uint32_t add_constant(chunk* chunk, value val){
+	write_value_array(&chunk->constants, val);
+	return chunk->constants.len - 1;
+}
+
 void deinit_chunk(chunk* chunk){
 	free(chunk->code);
+	deinit_value_array(&chunk->constants);
 	chunk->len = 0;
 	chunk->capacity = 0;
 	chunk->code = NULL;
 }
 
-void print_op_code(uint8_t op_code){
-	switch (op_code) {
-		case OP_RETURN: printf("%d - OP_RETURN\n", op_code); break;
-		default: printf("Invalid op code: %d\n", op_code); break;
+uint32_t print_op_code(chunk* chunk, uint32_t offset){
+	printf("%04d ", offset);
+	op_code op = chunk->code[offset];
+	switch (op) {
+		case OP_RETURN:{
+			printf("OP_RETURN\n");
+			return offset + 1;
+		}
+		case OP_CONSTANT:{
+			printf("OP_CONSTANT: ");
+			switch (chunk->constants.value[chunk->code[offset + 1]].type) {
+				case INT_VAL: printf("%d\n", chunk->constants.value[chunk->code[offset + 1]].as.int_number); break;
+				case FLOAT_VAL: printf("%f\n", chunk->constants.value[chunk->code[offset + 1]].as.float_number); break;
+				case BOOL_VAL: printf("%d\n", chunk->constants.value[chunk->code[offset + 1]].as.boolean); break;
+			}
+			return offset + 2;
+		}
+		case OP_NEGATE:{ printf("OP_NEGATE\n"); return offset + 1;}
+		case OP_ADD:{ printf("OP_ADD\n"); return offset + 1;}
+		case OP_SUB:{ printf("OP_SUB\n"); return offset + 1;}
+		case OP_MULT:{ printf("OP_MULT\n"); return offset + 1;}
+		case OP_DIV:{ printf("OP_DIV\n"); return offset + 1;}
+		default:{
+			printf("Invalid op code: %d\n", op);
+			return offset + 1;
+		}
 	}
 }
 
 void print_chunk(chunk* chunk, char* label){
 	printf("--- chunk: %s ---\n", label);
-	for (uint32_t i = 0; i < chunk->len; i++) {
-		print_op_code(chunk->code[i]);
+	for (uint32_t i = 0; i < chunk->len;) {
+		i = print_op_code(chunk, i);
 	}
 }

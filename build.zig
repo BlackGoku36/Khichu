@@ -8,6 +8,8 @@ pub fn build(b: *std.build.Builder) void {
     exe.addCSourceFile("src/parser.c", &[_][]const u8 {});
     exe.addCSourceFile("src/tokenizer.c", &[_][]const u8 {});
     exe.addCSourceFile("src/chunk.c", &[_][]const u8 {});
+    exe.addCSourceFile("src/value.c", &[_][]const u8 {});
+    exe.addCSourceFile("src/vm.c", &[_][]const u8 {});
     exe.linkLibC();
     exe.install();
 
