@@ -234,6 +234,7 @@ void parse(token_pool* toks, char* code, chunk* chunk){
 	parser_status parser_status = {};
 
 	ast_node* start = expression(&parser_status);
+	parser_match_consume(&parser_status, END_OF_FILE, "Expected end of expression");
 	code_gen(start);
 	end_parser();
 }
