@@ -2,8 +2,11 @@
 
 ## TODO
 
-- Add float suppport
-- Create custom VM
+- Add error handling (including line number, runtime/compile time)
+- Errors:
+	- When integer/float are calculated with each other
+- Keep in mind about brackets mis-match
+- Implement boolean operations: ==, !=, >=, <=, !x
 
 ## Compile and Run
 
