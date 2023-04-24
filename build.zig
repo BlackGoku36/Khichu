@@ -11,9 +11,9 @@ pub fn build(b: *std.build.Builder) void {
     exe.addCSourceFile("src/value.c", &[_][]const u8 {});
     exe.addCSourceFile("src/vm.c", &[_][]const u8 {});
     exe.linkLibC();
-    exe.install();
+    b.installArtifact(exe);
 
-    const run_cmd = exe.run();
+    const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
 
     const run_step = b.step("run", "Run the compiler");
