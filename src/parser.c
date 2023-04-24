@@ -169,7 +169,7 @@ ast_node* unary(parser_status* parser_status){
 		token minus_token = tokens[parser_status->current];
 		parser_consume(parser_status);
 		ast_node* right = unary(parser_status);
-		return make_unary_node(NEGATE, right, EMPTY_VALUE, (loc_info){.start= minus_token.loc.start, .end=right->loc.end});
+		return make_unary_node(NEGATE, right, (value){.type = right->val.type}, (loc_info){.start= minus_token.loc.start, .end=right->loc.end});
 	}
 	return primary(parser_status);
 }
@@ -181,7 +181,7 @@ ast_node* factor(parser_status* parser_status){
 		parser_consume(parser_status);
 		op_enum op = get_operator(prev(*parser_status).type);
 		ast_node* right = unary(parser_status);
-		left = make_ast_node(op, left, right, EMPTY_VALUE, (loc_info){.start=left->loc.start, .end=right->loc.end});
+		left = make_ast_node(op, left, right, (value){.type = right->val.type}, (loc_info){.start=left->loc.start, .end=right->loc.end});
 	}
 	return left;
 }
@@ -193,7 +193,7 @@ ast_node* term(parser_status* parser_status){
 		parser_consume(parser_status);
 		op_enum op = get_operator(prev(*parser_status).type);
 		ast_node* right = factor(parser_status);
-		left = make_ast_node(op, left, right, EMPTY_VALUE, (loc_info){.start=left->loc.start, .end=right->loc.end});
+		left = make_ast_node(op, left, right, (value){.type = right->val.type}, (loc_info){.start=left->loc.start, .end=right->loc.end});
 	}
 	return left;
 }
