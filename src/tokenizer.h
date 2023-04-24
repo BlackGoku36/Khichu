@@ -20,9 +20,13 @@ typedef enum token_type{
 }token_type;
 
 typedef struct{
+	uint32_t start;
+	uint32_t end;
+}loc_info;
+
+typedef struct{
 	token_type type;
-	uint32_t loc_start;
-	uint32_t loc_end;
+	loc_info loc;
 }token;
 
 typedef struct{

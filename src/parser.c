@@ -16,6 +16,7 @@ void parser_report_error(char* source, uint32_t from, uint32_t to, const char* m
 	uint32_t i = 0;
 	uint32_t line = 0;
 	uint32_t line_start = 0;
+	// Calculate line number
 	while (source[i] != '\0') {
 		if(i == from) break;
 		if(source[i] == '\n'){
@@ -25,12 +26,14 @@ void parser_report_error(char* source, uint32_t from, uint32_t to, const char* m
 		i += 1;
 	}
 	printf("Error at line: %d, %s\n", line, message);
+	// Print the line
 	uint32_t j = line_start;
 	while (source[j] != '\n' && source[j] != '\0') {
 		printf("%c", source[j]);
 		j += 1;
 	}
 	printf("\n");
+	// Print the pointer
 	j = line_start;
 	while (source[j] != '\n' && source[j] != '\0') {
 		if(j >= from && j <= to - 1){
@@ -45,22 +48,23 @@ void parser_report_error(char* source, uint32_t from, uint32_t to, const char* m
 }
 
 
-ast_node* make_ast_node(op_enum op, ast_node* left, ast_node* right, value val){
+ast_node* make_ast_node(op_enum op, ast_node* left, ast_node* right, value val, loc_info loc){
 	ast_node* node = (ast_node*) malloc(sizeof(ast_node));
 	assert(node != NULL);
 	node->op = op;
 	node->left = left;
 	node->right = right;
 	node->val = val;
+	node->loc = loc;
 	return node;
 }
 
-ast_node* make_leaf_node(op_enum op, value val){
-	return make_ast_node(op, NULL, NULL, val);
+ast_node* make_leaf_node(op_enum op, value val, loc_info loc){
+	return make_ast_node(op, NULL, NULL, val, loc);
 }
 
-ast_node* make_unary_node(op_enum op, ast_node* node, value val){
-	return make_ast_node(op, node, NULL, val);
+ast_node* make_unary_node(op_enum op, ast_node* node, value val, loc_info loc){
+	return make_ast_node(op, node, NULL, val, loc);
 }
 
 token parser_peek(parser_status ps){
@@ -90,7 +94,7 @@ void parser_match_consume(parser_status* ps, token_type tok, const char* error, 
 	if(match(*ps, tok)){
 		parser_consume(ps);
 	}else{
-		parser_report_error(source, error_at.loc_start, error_at.loc_end, error, false);
+		parser_report_error(source, error_at.loc.start, error_at.loc.end, error, true);
 	}
 }
 
@@ -104,11 +108,13 @@ int32_t parse_int(char* source, uint32_t from, uint32_t to){
 
 float parse_float(char* source, uint32_t from, uint32_t to){
 	float result = 0.0;
+	// Calculate left side of '.'
 	uint32_t i = from;
 	while (source[i] != '.') {
 		result = result * 10 + (source[i] - '0');
 		i += 1;
 	}
+	// Calculate right side of '.'
     float power = 10;
     for(uint32_t j = i+1; j < to; j++){
         result += ((float) (source[j] - '0')) / power;
@@ -134,14 +140,14 @@ ast_node* primary(parser_status* parser_status){
 	if(match(*parser_status, INT)){
 		parser_consume(parser_status);
 		token int_token = prev(*parser_status);
-		int32_t integer = parse_int(source, int_token.loc_start, int_token.loc_end);
-		return make_leaf_node(INT_LIT, (value){.type = INT_VAL, .as.int_number = integer});
+		int32_t integer = parse_int(source, int_token.loc.start, int_token.loc.end);
+		return make_leaf_node(INT_LIT, INT_VALUE(integer), int_token.loc);
 	}
 	if(match(*parser_status, FLOAT)){
 		parser_consume(parser_status);
 		token float_token = prev(*parser_status);
-		float float_num = parse_float(source, float_token.loc_start, float_token.loc_end);
-		return make_leaf_node(FLOAT_LIT, (value){.type = FLOAT_VAL, .as.float_number = float_num});
+		float float_num = parse_float(source, float_token.loc.start, float_token.loc.end);
+		return make_leaf_node(FLOAT_LIT, FLOAT_VALUE(float_num), float_token.loc);
 	}
 	if(match(*parser_status, LEFT_PAREN)){
 		uint32_t pos = parser_status->current;
@@ -152,7 +158,7 @@ ast_node* primary(parser_status* parser_status){
 	}
 
 	token current = parser_peek(*parser_status);
-	parser_report_error(source, current.loc_start, current.loc_end, "Unknow literal found!", true);
+	parser_report_error(source, current.loc.start, current.loc.end, "Unknow literal found!", true);
 
 	return NULL; // Unreachable
 }
@@ -160,9 +166,10 @@ ast_node* primary(parser_status* parser_status){
 ast_node* unary(parser_status* parser_status){
 	// TODO: ADD '!' support
 	if(match(*parser_status, MINUS)){
+		token minus_token = tokens[parser_status->current];
 		parser_consume(parser_status);
 		ast_node* right = unary(parser_status);
-		return make_unary_node(NEGATE, right, (value){});
+		return make_unary_node(NEGATE, right, EMPTY_VALUE, (loc_info){.start= minus_token.loc.start, .end=right->loc.end});
 	}
 	return primary(parser_status);
 }
@@ -174,7 +181,7 @@ ast_node* factor(parser_status* parser_status){
 		parser_consume(parser_status);
 		op_enum op = get_operator(prev(*parser_status).type);
 		ast_node* right = unary(parser_status);
-		left = make_ast_node(op, left, right, (value){});
+		left = make_ast_node(op, left, right, EMPTY_VALUE, (loc_info){.start=left->loc.start, .end=right->loc.end});
 	}
 	return left;
 }
@@ -186,7 +193,7 @@ ast_node* term(parser_status* parser_status){
 		parser_consume(parser_status);
 		op_enum op = get_operator(prev(*parser_status).type);
 		ast_node* right = factor(parser_status);
-		left = make_ast_node(op, left, right, (value){});
+		left = make_ast_node(op, left, right, EMPTY_VALUE, (loc_info){.start=left->loc.start, .end=right->loc.end});
 	}
 	return left;
 }
@@ -225,18 +232,20 @@ void analysis(ast_node* node){
 		case SUB:
 		case MULT:
 		case DIV:{
-			if(node->left->val.type != node->right->val.type){
-				printf("Type miss-match between: ");
+			if(GET_TYPE(node->left->val) != GET_TYPE(node->right->val)){
+				parser_report_error(source, node->loc.start, node->loc.end, "Type miss-match", false);
+				printf("Between: ");
+
 				switch (node->left->val.type) {
-					case INT_VAL: printf("%d (INT)", node->left->val.as.int_number); break;
-					case FLOAT_VAL: printf("%f (FLOAT)", node->left->val.as.float_number); break;
-					case BOOL_VAL: printf("%d (BOOL)", node->left->val.as.boolean); break;
+					case INT_VAL: printf("%d (INT)", AS_INT(node->left->val)); break;
+					case FLOAT_VAL: printf("%f (FLOAT)", AS_FLOAT(node->left->val)); break;
+					case BOOL_VAL: printf("%d (BOOL)", AS_BOOL(node->left->val)); break;
 				}
 				printf(" and ");
 				switch (node->right->val.type) {
-					case INT_VAL: printf("%d (INT)", node->right->val.as.int_number); break;
-					case FLOAT_VAL: printf("%f (FLOAT)", node->right->val.as.float_number); break;
-					case BOOL_VAL: printf("%d (BOOL)", node->right->val.as.boolean); break;
+					case INT_VAL: printf("%d (INT)", AS_INT(node->right->val)); break;
+					case FLOAT_VAL: printf("%f (FLOAT)", AS_FLOAT(node->right->val)); break;
+					case BOOL_VAL: printf("%d (BOOL)", AS_BOOL(node->right->val)); break;
 				}
 				printf("\n");
 				exit(EXIT_FAILURE);

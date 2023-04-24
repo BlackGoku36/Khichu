@@ -20,6 +20,7 @@ typedef struct ast_node{
 	struct ast_node* right;
 	op_enum op;
 	value val;
+	loc_info loc;
 } ast_node;
 
 void parse(token_pool* toks, char* code, chunk* chunk);

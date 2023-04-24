@@ -23,6 +23,20 @@ typedef struct{
 	value* value;
 } value_array;
 
+#define INT_VALUE(val)   ((value){.type=INT_VAL, .as.int_number=val})
+#define FLOAT_VALUE(val) ((value){.type=FLOAT_VAL, .as.float_number=val})
+#define BOOL_VALUE(val)  ((value){.type=BOOL_VAL, .as.boolean=val})
+#define EMPTY_VALUE  ((value){})
+
+#define AS_INT(val)   ((val).as.int_number)
+#define AS_FLOAT(val) ((val).as.float_number)
+#define AS_BOOL(val)  ((val).as.boolean)
+
+#define GET_TYPE(val) ((val).type)
+#define IS_INT(val) ((val).type == INT_VAL)
+#define IS_FLOAT(val) ((val).type == FLOAT_VAL)
+#define IS_BOOL(val) ((val).type == BOOL_VAL)
+
 value_array init_value_array();
 void resize_value_array(value_array* val_array, uint32_t new_capacity);
 void write_value_array(value_array* value_array, value val);

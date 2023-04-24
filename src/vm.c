@@ -47,10 +47,10 @@ vm_error interpret(chunk* chunk){
 			case OP_NEGATE:{
 				value val = pop();
 				switch (val.type) {
-					case INT_VAL: val.as.int_number = -val.as.int_number; break;
-					case FLOAT_VAL: val.as.float_number = -val.as.float_number; break;
+					case INT_VAL: AS_INT(val) = -AS_INT(val); break;
+					case FLOAT_VAL: AS_FLOAT(val) = -AS_FLOAT(val); break;
 					default:
-						printf("Invalid type for negate operation\n");
+						printf("Invalid type for NEGATE operation\n");
 				}
 				push(val);
 				break;
@@ -60,8 +60,8 @@ vm_error interpret(chunk* chunk){
 				value a = pop();
 				// TODO: Need to check type of both values?
 				switch (a.type) {
-					case INT_VAL: a.as.int_number += b.as.int_number; break;
-					case FLOAT_VAL: a.as.float_number += b.as.float_number; break;
+					case INT_VAL: AS_INT(a) += AS_INT(b); break;
+					case FLOAT_VAL: AS_FLOAT(a) += AS_FLOAT(b); break;
 					default:
 						printf("Invalid type(s) for ADD operation\n");
 				}
@@ -73,8 +73,8 @@ vm_error interpret(chunk* chunk){
 				value a = pop();
 				// TODO: Need to check type of both values?
 				switch (a.type) {
-					case INT_VAL: a.as.int_number -= b.as.int_number; break;
-					case FLOAT_VAL: a.as.float_number -= b.as.float_number; break;
+					case INT_VAL: AS_INT(a) -= AS_INT(b); break;
+					case FLOAT_VAL: AS_FLOAT(a) -= AS_FLOAT(b); break;
 					default:
 						printf("Invalid type(s) for SUB operation\n");
 				}
@@ -86,8 +86,8 @@ vm_error interpret(chunk* chunk){
 				value a = pop();
 				// TODO: Need to check type of both values?
 				switch (a.type) {
-					case INT_VAL: a.as.int_number *= b.as.int_number; break;
-					case FLOAT_VAL: a.as.float_number *= b.as.float_number; break;
+					case INT_VAL: AS_INT(a) *= AS_INT(b); break;
+					case FLOAT_VAL: AS_FLOAT(a) *= AS_FLOAT(b); break;
 					default:
 						printf("Invalid type(s) for MULT operation\n");
 				}
@@ -99,8 +99,8 @@ vm_error interpret(chunk* chunk){
 				value a = pop();
 				// TODO: Need to check type of both values?
 				switch (a.type) {
-					case INT_VAL: a.as.int_number /= b.as.int_number; break;
-					case FLOAT_VAL: a.as.float_number /= b.as.float_number; break;
+					case INT_VAL: AS_INT(a) /= AS_INT(b); break;
+					case FLOAT_VAL: AS_FLOAT(a) /= AS_FLOAT(b); break;
 					default:
 						printf("Invalid type(s) for DIV operation\n");
 				}

@@ -25,7 +25,7 @@ void print_token(char* source, token token){
 		"END_OF_FILE",
 	};
 	printf("Token, type: %s, str:", token_str[token.type]);
-	for (uint32_t i = token.loc_start; i < token.loc_end; i++) {
+	for (uint32_t i = token.loc.start; i < token.loc.end; i++) {
 			printf("%c", source[i]);
 	}
 	printf("\n");
@@ -50,7 +50,7 @@ bool match_consume(char* source, scanner_status* scan_status, char match){
 }
 
 void produce_token(token_pool* pool, token_type type, uint32_t loc_start, uint32_t loc_end){
-	pool->pool[pool->cursor] = (token){.type = type, .loc_start = loc_start, .loc_end = loc_end};
+	pool->pool[pool->cursor] = (token){.type = type, .loc.start = loc_start, .loc.end = loc_end};
 	pool->cursor += 1;
 }
 
@@ -82,7 +82,7 @@ uint32_t parse_number(char* source, scanner_status* scan_status, bool* is_float)
 }
 
 void report_error(char* source, uint32_t line, uint32_t at, const char* message){
-	printf("Error at line: %d, %s\n", line+1, message);
+	printf("Error at line: %d, %s\n", line, message);
 	uint32_t error_line_offset = 0;
 	uint32_t line_counter = 0;
 	// Get offset to the line containing error.
