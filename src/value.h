@@ -43,5 +43,6 @@ void write_value_array(value_array* value_array, value val);
 void deinit_value_array(value_array* value_array);
 void print_value(value value);
 void print_value_array(value_array* value_array, char* label);
+const char* type_str(value value);
 
 #endif

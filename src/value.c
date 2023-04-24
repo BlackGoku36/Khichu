@@ -52,3 +52,11 @@ void print_value_array(value_array* value_array, char* label){
 		print_value(value_array->value[i]);
 	}
 }
+
+const char* type_str(value value){
+	switch (value.type) {
+		case INT_VAL: return "Int";
+		case FLOAT_VAL: return "Float";
+		case BOOL_VAL: return "Bool";
+	}
+}

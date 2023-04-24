@@ -12,31 +12,55 @@ token* tokens;
 char* source;
 chunk* compiling_chunk;
 
-void parser_report_error(char* source, uint32_t from, uint32_t to, const char* message, bool panic){
+void calculate_line(char* source, loc_info loc, uint32_t* line, uint32_t* line_start){
 	uint32_t i = 0;
-	uint32_t line = 0;
-	uint32_t line_start = 0;
-	// Calculate line number
 	while (source[i] != '\0') {
-		if(i == from) break;
+		if(i == loc.start) break;
 		if(source[i] == '\n'){
-			line += 1;
-			line_start = i;
+			*line += 1;
+			*line_start = i;
 		}
 		i += 1;
 	}
-	printf("Error at line: %d, %s\n", line, message);
-	// Print the line
+}
+
+void print_line(char* source, uint32_t line_start){
 	uint32_t j = line_start;
 	while (source[j] != '\n' && source[j] != '\0') {
 		printf("%c", source[j]);
 		j += 1;
 	}
 	printf("\n");
-	// Print the pointer
-	j = line_start;
+}
+
+void parser_report_error(char* source, loc_info loc, const char* message, bool panic){
+	uint32_t line = 0;
+	uint32_t line_start = 0;
+	calculate_line(source, loc, &line, &line_start);
+	printf("Error at line: %d, %s\n", line, message);
+	print_line(source, line_start);
+	uint32_t j = line_start;
 	while (source[j] != '\n' && source[j] != '\0') {
-		if(j >= from && j <= to - 1){
+		if(j >= loc.start && j <= loc.end - 1){
+			printf("^");
+		}else{
+			printf("-");
+		}
+		j += 1;
+	}
+	printf("\n");
+	if(panic) exit(EXIT_FAILURE);
+}
+
+void parser_report_error2(char* source, loc_info loc1, loc_info loc2, const char* message, bool panic){
+	uint32_t line = 0;
+	uint32_t line_start = 0;
+	calculate_line(source, loc1, &line, &line_start);
+	printf("Error at line: %d, %s\n", line, message);
+	print_line(source, line_start);
+	uint32_t j = line_start;
+	while (source[j] != '\n' && source[j] != '\0') {
+		if((j >= loc1.start && j <= loc1.end - 1) || (j >= loc2.start && j <= loc2.end - 1)){
 			printf("^");
 		}else{
 			printf("-");
@@ -94,7 +118,7 @@ void parser_match_consume(parser_status* ps, token_type tok, const char* error, 
 	if(match(*ps, tok)){
 		parser_consume(ps);
 	}else{
-		parser_report_error(source, error_at.loc.start, error_at.loc.end, error, true);
+		parser_report_error(source, error_at.loc, error, true);
 	}
 }
 
@@ -158,7 +182,7 @@ ast_node* primary(parser_status* parser_status){
 	}
 
 	token current = parser_peek(*parser_status);
-	parser_report_error(source, current.loc.start, current.loc.end, "Unknow literal found!", true);
+	parser_report_error(source, current.loc, "Unknow literal found!", true);
 
 	return NULL; // Unreachable
 }
@@ -233,21 +257,13 @@ void analysis(ast_node* node){
 		case MULT:
 		case DIV:{
 			if(GET_TYPE(node->left->val) != GET_TYPE(node->right->val)){
-				parser_report_error(source, node->loc.start, node->loc.end, "Type miss-match", false);
-				printf("Between: ");
-
-				switch (node->left->val.type) {
-					case INT_VAL: printf("%d (INT)", AS_INT(node->left->val)); break;
-					case FLOAT_VAL: printf("%f (FLOAT)", AS_FLOAT(node->left->val)); break;
-					case BOOL_VAL: printf("%d (BOOL)", AS_BOOL(node->left->val)); break;
-				}
-				printf(" and ");
-				switch (node->right->val.type) {
-					case INT_VAL: printf("%d (INT)", AS_INT(node->right->val)); break;
-					case FLOAT_VAL: printf("%f (FLOAT)", AS_FLOAT(node->right->val)); break;
-					case BOOL_VAL: printf("%d (BOOL)", AS_BOOL(node->right->val)); break;
-				}
-				printf("\n");
+				parser_report_error2(source, node->left->loc, node->right->loc, "Type miss-match", false);
+				const char* op_type;
+				if(node->op == ADD) op_type = "added";
+				else if(node->op == SUB) op_type = "substracted";
+				else if(node->op == MULT) op_type = "multiplied";
+				else if(node->op == DIV) op_type = "divided";
+				printf("Type %s and %s can't be %s\n", type_str(node->left->val), type_str(node->right->val), op_type);
 				exit(EXIT_FAILURE);
 			}
 		}
