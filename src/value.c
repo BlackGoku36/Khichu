@@ -41,7 +41,13 @@ void print_value(value value){
 	switch (value.type) {
 		case INT_VAL: printf("%d (INT)\n", value.as.int_number); break;
 		case FLOAT_VAL: printf("%f (FLOAT)\n", value.as.float_number); break;
-		case BOOL_VAL: printf("%d (BOOL)\n", value.as.boolean); break;
+		case BOOL_VAL:{
+			const char* str;
+			if(AS_BOOL(value) == true) str = "true";
+			else str = "false";
+			printf("%s (BOOL)\n", str);
+			break;
+		}
 	}
 }
 

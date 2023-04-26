@@ -24,9 +24,9 @@ int main(void){
 	fclose(file_ptr);
 
 	token_pool tokens = scanner(buffer, numbytes);
-	// for (uint32_t i = 0; i < tokens.cursor; i++) {
-	// 	print_token(buffer, tokens.pool[i]);
-	// }
+	for (uint32_t i = 0; i < tokens.cursor; i++) {
+		print_token(buffer, tokens.pool[i]);
+	}
 
 	init_vm();
 	chunk chunk = init_chunk();

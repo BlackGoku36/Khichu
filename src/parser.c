@@ -122,25 +122,25 @@ void parser_match_consume(parser_status* ps, token_type tok, const char* error, 
 	}
 }
 
-int32_t parse_int(char* source, uint32_t from, uint32_t to){
+int32_t parse_int(char* source, loc_info loc){
     int32_t result = 0;
-    for(uint32_t i = from; i < to; i++){
+    for(uint32_t i = loc.start; i < loc.end; i++){
         result = result * 10 + (source[i] - '0');
     }
     return result;
 }
 
-float parse_float(char* source, uint32_t from, uint32_t to){
+float parse_float(char* source, loc_info loc){
 	float result = 0.0;
 	// Calculate left side of '.'
-	uint32_t i = from;
+	uint32_t i = loc.start;
 	while (source[i] != '.') {
 		result = result * 10 + (source[i] - '0');
 		i += 1;
 	}
 	// Calculate right side of '.'
     float power = 10;
-    for(uint32_t j = i+1; j < to; j++){
+    for(uint32_t j = i+1; j < loc.end; j++){
         result += ((float) (source[j] - '0')) / power;
         power *= 10;
     }
@@ -150,10 +150,10 @@ float parse_float(char* source, uint32_t from, uint32_t to){
 op_enum get_operator(token_type type){
 	op_enum op = -1;
 	switch (type) {
-		case PLUS: op = ADD; break;
-		case MINUS: op = SUB; break;
-		case STAR: op = MULT; break;
-		case SLASH: op = DIV; break;
+		case TOK_PLUS: op = ADD; break;
+		case TOK_MINUS: op = SUB; break;
+		case TOK_STAR: op = MULT; break;
+		case TOK_SLASH: op = DIV; break;
 		default:
 			printf("Invalid OP type\n");
 	}
@@ -161,23 +161,33 @@ op_enum get_operator(token_type type){
 }
 
 ast_node* primary(parser_status* parser_status){
-	if(match(*parser_status, INT)){
+	if(match(*parser_status, TOK_INT)){
 		parser_consume(parser_status);
 		token int_token = prev(*parser_status);
-		int32_t integer = parse_int(source, int_token.loc.start, int_token.loc.end);
+		int32_t integer = parse_int(source, int_token.loc);
 		return make_leaf_node(INT_LIT, INT_VALUE(integer), int_token.loc);
 	}
-	if(match(*parser_status, FLOAT)){
+	if(match(*parser_status, TOK_FLOAT)){
 		parser_consume(parser_status);
 		token float_token = prev(*parser_status);
-		float float_num = parse_float(source, float_token.loc.start, float_token.loc.end);
+		float float_num = parse_float(source, float_token.loc);
 		return make_leaf_node(FLOAT_LIT, FLOAT_VALUE(float_num), float_token.loc);
 	}
-	if(match(*parser_status, LEFT_PAREN)){
+	if(match(*parser_status, TOK_TRUE)){
+		parser_consume(parser_status);
+		token bool_token = prev(*parser_status);
+		return make_leaf_node(BOOL_LIT, BOOL_VALUE(true), bool_token.loc);
+	}
+	if(match(*parser_status, TOK_FALSE)){
+		parser_consume(parser_status);
+		token bool_token = prev(*parser_status);
+		return make_leaf_node(BOOL_LIT, BOOL_VALUE(false), bool_token.loc);
+	}
+	if(match(*parser_status, TOK_LEFT_PAREN)){
 		uint32_t pos = parser_status->current;
 		parser_consume(parser_status);
 		ast_node* expr = expression(parser_status);
-		parser_match_consume(parser_status, RIGHT_PAREN, "Expected ')' after expression", tokens[pos]);
+		parser_match_consume(parser_status, TOK_RIGHT_PAREN, "Expected ')' after expression", tokens[pos]);
 		return expr;
 	}
 
@@ -189,11 +199,16 @@ ast_node* primary(parser_status* parser_status){
 
 ast_node* unary(parser_status* parser_status){
 	// TODO: ADD '!' support
-	if(match(*parser_status, MINUS)){
+	if(match(*parser_status, TOK_MINUS)){
 		token minus_token = tokens[parser_status->current];
 		parser_consume(parser_status);
-		ast_node* right = unary(parser_status);
-		return make_unary_node(NEGATE, right, (value){.type = right->val.type}, (loc_info){.start= minus_token.loc.start, .end=right->loc.end});
+		ast_node* node = unary(parser_status);
+		return make_unary_node(NEGATE, node, (value){.type = node->val.type}, (loc_info){.start= minus_token.loc.start, .end=node->loc.end});
+	}else if (match(*parser_status, TOK_NOT)) {
+		token not_token = tokens[parser_status->current];
+		parser_consume(parser_status);
+		ast_node* node = unary(parser_status);
+		return make_unary_node(NOT, node, (value){.type = node->val.type}, (loc_info){.start=not_token.loc.start, .end=node->loc.end});
 	}
 	return primary(parser_status);
 }
@@ -201,7 +216,7 @@ ast_node* unary(parser_status* parser_status){
 ast_node* factor(parser_status* parser_status){
 	ast_node* left = unary(parser_status);
 
-	while(match2(*parser_status, STAR, SLASH)){
+	while(match2(*parser_status, TOK_STAR, TOK_SLASH)){
 		parser_consume(parser_status);
 		op_enum op = get_operator(prev(*parser_status).type);
 		ast_node* right = unary(parser_status);
@@ -213,7 +228,7 @@ ast_node* factor(parser_status* parser_status){
 ast_node* term(parser_status* parser_status){
 	ast_node* left = factor(parser_status);
 
-	while(match2(*parser_status, PLUS, MINUS)){
+	while(match2(*parser_status, TOK_PLUS, TOK_MINUS)){
 		parser_consume(parser_status);
 		op_enum op = get_operator(prev(*parser_status).type);
 		ast_node* right = factor(parser_status);
@@ -309,6 +324,15 @@ void code_gen(ast_node* node){
 			emit_bytecode2(OP_CONSTANT, add_constant(current_chunk(), node->val));
 			break;
 		}
+		case BOOL_LIT:{
+			if(node->val.as.boolean == true) emit_bytecode(OP_TRUE);
+			if(node->val.as.boolean == false) emit_bytecode(OP_FALSE);
+			break;
+		}
+		case NOT:{
+			emit_bytecode(OP_NOT);
+			break;
+		}
 	    default:
 	      printf("Unknown AST operator %d\n", node->op);
 	      exit(1);
@@ -322,7 +346,7 @@ void parse(token_pool* toks, char* code, chunk* chunk){
 	parser_status parser_status = {};
 
 	ast_node* start = expression(&parser_status);
-	parser_match_consume(&parser_status, END_OF_FILE, "Expected end of expression", parser_peek(parser_status));
+	parser_match_consume(&parser_status, TOK_END_OF_FILE, "Expected end of expression", parser_peek(parser_status));
 	analysis(start);
 	code_gen(start);
 	end_parser();

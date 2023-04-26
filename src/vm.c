@@ -44,6 +44,20 @@ vm_error interpret(chunk* chunk){
 				push(constant);
 				break;
 			}
+			case OP_TRUE:{
+				push(BOOL_VALUE(true));
+				break;
+			}
+			case OP_FALSE:{
+				push(BOOL_VALUE(false));
+				break;
+			}
+			case OP_NOT:{
+				value boolean = pop();
+				AS_BOOL(boolean) = !AS_BOOL(boolean);
+				push(boolean);
+				break;
+			}
 			case OP_NEGATE:{
 				value val = pop();
 				switch (val.type) {

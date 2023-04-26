@@ -12,7 +12,8 @@ typedef struct{
 }parser_status;
 
 typedef enum op_enum{
-	NEGATE, ADD, SUB, MULT, DIV, INT_LIT, FLOAT_LIT
+	NEGATE, ADD, SUB, MULT, DIV, INT_LIT, FLOAT_LIT, BOOL_LIT,
+	NOT
 }op_enum;
 
 typedef struct ast_node{
