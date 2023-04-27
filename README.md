@@ -2,7 +2,7 @@
 
 ## TODO
 
-- False negative error on doing: `!(2.0 > 1.0)` (hint: change ast_node's value type in comparision parser function)
+- False negative on checking bool(s) equality (hint: fix analyser switch-case)
 - Should error when analysis (does in VM): `1.0 < 2.0 < 3.0`
 - Implement strings (formating), to improve error messages.
 - Implement stack trace for debugging purpose (there was some zig trick to get this)

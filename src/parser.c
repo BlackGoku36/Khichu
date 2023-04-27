@@ -249,7 +249,7 @@ ast_node* comparison(parser_status* parser_status){
 		op_enum op = get_operator(parser_peek(*parser_status).type);
 		parser_consume(parser_status);
 		ast_node* right = term(parser_status);
-		left = make_ast_node(op, left, right, (value){.type = right->val.type}, (loc_info){.start=left->loc.start, .end=right->loc.end});
+		left = make_ast_node(op, left, right, (value){.type = BOOL_VAL}, (loc_info){.start=left->loc.start, .end=right->loc.end});
 	}
 	return left;
 }
@@ -260,7 +260,7 @@ ast_node* equality(parser_status* parser_status){
 		op_enum op = get_operator(parser_peek(*parser_status).type);
 		parser_consume(parser_status);
 		ast_node* right = comparison(parser_status);
-		left = make_ast_node(op, left, right, (value){.type = right->val.type}, (loc_info){.start=left->loc.start, .end=right->loc.end});
+		left = make_ast_node(op, left, right, (value){.type = BOOL_VAL}, (loc_info){.start=left->loc.start, .end=right->loc.end});
 	}
 	return left;
 }
@@ -328,6 +328,34 @@ void analysis(ast_node* node){
 					parser_report_error(source, node->left->loc, "Type miss-match", false);
 					printf("Unexpected type %s, cannot use operator NEGATE '-' on type %s.\n", type_str(node->left->val), type_str(node->left->val));
 				}
+			}
+			break;
+		}
+		case GREATER:
+		case LESSER:
+		case GREATER_EQUAL:
+		case LESSER_EQUAL:
+		case EQUAL_EQUAL:
+		case NOT_EQUAL:{
+			const char* op_type;
+			if(node->op == GREATER) op_type = ">";
+			else if(node->op == LESSER) op_type = "<";
+			else if(node->op == GREATER_EQUAL) op_type = ">=";
+			else if(node->op == LESSER_EQUAL) op_type = "<=";
+			else if(node->op == EQUAL_EQUAL) op_type = "==";
+			else if(node->op == NOT_EQUAL) op_type = "!=";
+
+			// Check if both types aren't equal
+			if(GET_TYPE(node->left->val) != GET_TYPE(node->right->val)){
+				parser_report_error2(source, node->left->loc, node->right->loc, "Type miss-match", false);
+				printf("Can't use operator '%s' on type %s and %s\n", op_type, type_str(node->left->val), type_str(node->right->val));
+				exit(EXIT_FAILURE);
+			}
+			// if both types are equal then check if they are bool
+			if(GET_TYPE(node->left->val) == BOOL_VAL){
+				parser_report_error2(source, node->left->loc, node->right->loc, "Type miss-match", false);
+				printf("Can't compare type BOOL and BOOL\n");
+				exit(EXIT_FAILURE);
 			}
 			break;
 		}
