@@ -281,6 +281,27 @@ void analysis(ast_node* node){
 				printf("Type %s and %s can't be %s\n", type_str(node->left->val), type_str(node->right->val), op_type);
 				exit(EXIT_FAILURE);
 			}
+			break;
+		}
+		case NOT:{
+			// Is unary node
+			if(node->left != NULL && node->right == NULL){
+				if(GET_TYPE(node->left->val) != BOOL_VAL){
+					parser_report_error(source, node->left->loc, "Type miss-match", false);
+					printf("Unexpected type %s, cannot use operator NOT '!' on type %s.\n", type_str(node->left->val), type_str(node->left->val));
+				}
+			}
+			break;
+		}
+		case NEGATE:{
+			// Is unary node
+			if(node->left != NULL && node->right == NULL){
+				if(GET_TYPE(node->left->val) != INT_VAL && GET_TYPE(node->left->val) != FLOAT_VAL){
+					parser_report_error(source, node->left->loc, "Type miss-match", false);
+					printf("Unexpected type %s, cannot use operator NEGATE '-' on type %s.\n", type_str(node->left->val), type_str(node->left->val));
+				}
+			}
+			break;
 		}
 		default:;
 	}
