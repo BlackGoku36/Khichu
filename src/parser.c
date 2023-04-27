@@ -334,7 +334,21 @@ void analysis(ast_node* node){
 		case GREATER:
 		case LESSER:
 		case GREATER_EQUAL:
-		case LESSER_EQUAL:
+		case LESSER_EQUAL:{
+			const char* op_type;
+			if(node->op == GREATER) op_type = ">";
+			else if(node->op == LESSER) op_type = "<";
+			else if(node->op == GREATER_EQUAL) op_type = ">=";
+			else if(node->op == LESSER_EQUAL) op_type = "<=";
+			else if(node->op == EQUAL_EQUAL) op_type = "==";
+			else if(node->op == NOT_EQUAL) op_type = "!=";
+
+			if(GET_TYPE(node->left->val) == GET_TYPE(node->right->val) && GET_TYPE(node->left->val) == BOOL_VAL){
+				parser_report_error2(source, node->left->loc, node->right->loc, "Type miss-match", false);
+				printf("Can't compare type BOOL and BOOL\n");
+				exit(EXIT_FAILURE);
+			}
+		}
 		case EQUAL_EQUAL:
 		case NOT_EQUAL:{
 			const char* op_type;
@@ -345,16 +359,9 @@ void analysis(ast_node* node){
 			else if(node->op == EQUAL_EQUAL) op_type = "==";
 			else if(node->op == NOT_EQUAL) op_type = "!=";
 
-			// Check if both types aren't equal
 			if(GET_TYPE(node->left->val) != GET_TYPE(node->right->val)){
 				parser_report_error2(source, node->left->loc, node->right->loc, "Type miss-match", false);
 				printf("Can't use operator '%s' on type %s and %s\n", op_type, type_str(node->left->val), type_str(node->right->val));
-				exit(EXIT_FAILURE);
-			}
-			// if both types are equal then check if they are bool
-			if(GET_TYPE(node->left->val) == BOOL_VAL){
-				parser_report_error2(source, node->left->loc, node->right->loc, "Type miss-match", false);
-				printf("Can't compare type BOOL and BOOL\n");
 				exit(EXIT_FAILURE);
 			}
 			break;

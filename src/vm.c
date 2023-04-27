@@ -185,8 +185,9 @@ vm_error interpret(chunk* chunk){
 				switch (a.type) {
 					case INT_VAL: AS_BOOL(c) = AS_INT(a) == AS_INT(b); break;
 					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) == AS_FLOAT(b); break;
+					case BOOL_VAL: AS_BOOL(c) = AS_BOOL(a) == AS_BOOL(b); break;
 					default:
-						printf("Invalid type(s) for LESSER_EQUAL operation\n");
+						printf("Invalid type(s) for EQUAL_EQUAL operation\n");
 				}
 				push(c);
 				break;
@@ -199,8 +200,9 @@ vm_error interpret(chunk* chunk){
 				switch (a.type) {
 					case INT_VAL: AS_BOOL(c) = AS_INT(a) != AS_INT(b); break;
 					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) != AS_FLOAT(b); break;
+					case BOOL_VAL: AS_BOOL(c) = AS_BOOL(a) != AS_BOOL(b); break;
 					default:
-						printf("Invalid type(s) for LESSER_EQUAL operation\n");
+						printf("Invalid type(s) for NOT_EQUAL operation\n");
 				}
 				push(c);
 				break;
