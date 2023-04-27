@@ -74,6 +74,8 @@ uint32_t print_op_code(chunk* chunk, uint32_t offset){
 		case OP_LESSER:{printf("OP_LESSER\n"); return offset + 1;}
 		case OP_GREATER_EQUAL:{printf("OP_GREATER_EQUAL\n"); return offset + 1;}
 		case OP_LESSER_EQUAL:{printf("OP_LESSER_EQUAL\n"); return offset + 1;}
+		case OP_EQUAL_EQUAL:{printf("OP_EQUAL_EQUAL\n"); return offset + 1;}
+		case OP_NOT_EQUAL:{printf("OP_NOT_EQUAL\n"); return offset + 1;}
 		default:{
 			printf("Invalid op code: %d\n", op);
 			return offset + 1;

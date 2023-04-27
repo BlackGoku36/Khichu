@@ -158,6 +158,8 @@ op_enum get_operator(token_type type){
 		case TOK_LESSER: op = LESSER; break;
 		case TOK_GREATER_EQUAL: op = GREATER_EQUAL; break;
 		case TOK_LESSER_EQUAL: op = LESSER_EQUAL; break;
+		case TOK_EQUAL_EQUAL: op = EQUAL_EQUAL; break;
+		case TOK_NOT_EQUAL: op = NOT_EQUAL; break;
 		default:
 			printf("Invalid OP type\n");
 	}
@@ -252,8 +254,19 @@ ast_node* comparison(parser_status* parser_status){
 	return left;
 }
 
+ast_node* equality(parser_status* parser_status){
+	ast_node* left = comparison(parser_status);
+	while (match2(*parser_status, TOK_EQUAL_EQUAL, TOK_NOT_EQUAL)) {
+		op_enum op = get_operator(parser_peek(*parser_status).type);
+		parser_consume(parser_status);
+		ast_node* right = comparison(parser_status);
+		left = make_ast_node(op, left, right, (value){.type = right->val.type}, (loc_info){.start=left->loc.start, .end=right->loc.end});
+	}
+	return left;
+}
+
 ast_node* expression(parser_status* parser_status){
-	return comparison(parser_status);
+	return equality(parser_status);
 }
 
 chunk* current_chunk(){
@@ -383,6 +396,14 @@ void code_gen(ast_node* node){
 		}
 		case LESSER_EQUAL:{
 			emit_bytecode(OP_LESSER_EQUAL);
+			break;
+		}
+		case EQUAL_EQUAL:{
+			emit_bytecode(OP_EQUAL_EQUAL);
+			break;
+		}
+		case NOT_EQUAL:{
+			emit_bytecode(OP_NOT_EQUAL);
 			break;
 		}
 	    default:

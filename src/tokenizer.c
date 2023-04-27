@@ -15,7 +15,7 @@ void print_token(char* source, token token){
 		"PLUS", "MINUS", "STAR", "SLASH", "NOT",
 		"EQUAL", "LESSER", "GREATER",
 		"LESSER_LESSER", "GREATER_GREATER",
-		"EQUAL_EQUAL", "LESSER_EQUAL", "GREATER_EQUAL",
+		"EQUAL_EQUAL", "NOT_EQUAL", "LESSER_EQUAL", "GREATER_EQUAL",
 		"PLUS_EQUAL", "MINUS_EQUAL", "STAR_EQUAL", "SLASH_EQUAL",
 		"COLON", "SEMICOLON", "DOT", "COMMA",
 		"LEFT_PAREN", "RIGHT_PAREN", "LEFT_BRACE", "RIGHT_BRACE", "LEFT_BRACKET", "RIGHT_BRACKET",
@@ -229,7 +229,8 @@ token_pool scanner(char* source, uint32_t len){
 				break;
 			}
 			case '!':{
-				produce_token(&token_pool, TOK_NOT, scan_status.start, scan_status.current); break;
+				token_type type = match_consume(source, &scan_status, '=') ? TOK_NOT_EQUAL : TOK_NOT;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current); break;
 			}
 			case ' ': break;
 			case '\r': break;
