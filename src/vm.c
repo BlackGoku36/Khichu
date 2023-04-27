@@ -121,6 +121,67 @@ vm_error interpret(chunk* chunk){
 				push(a);
 				break;
 			}
+			case OP_GREATER:{
+				value b = pop();
+				value a = pop();
+				// TODO: Need to check type of both values?
+				value c = (value){.type=BOOL_VAL};
+				switch (a.type) {
+					case INT_VAL: AS_BOOL(c) = AS_INT(a) > AS_INT(b); break;
+					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) > AS_FLOAT(b); break;
+					default:
+						printf("Invalid type(s) for GREATER operation\n");
+				}
+				push(c);
+				break;
+			}
+			case OP_LESSER:{
+				value b = pop();
+				value a = pop();
+				// TODO: Need to check type of both values?
+				value c = (value){.type=BOOL_VAL};
+				switch (a.type) {
+					case INT_VAL: AS_BOOL(c) = AS_INT(a) < AS_INT(b); break;
+					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) < AS_FLOAT(b); break;
+					default:
+						printf("Invalid type(s) for LESSER operation\n");
+				}
+				push(c);
+				break;
+			}
+			case OP_GREATER_EQUAL:{
+				value b = pop();
+				value a = pop();
+				// TODO: Need to check type of both values?
+				value c = (value){.type=BOOL_VAL};
+				switch (a.type) {
+					case INT_VAL: AS_BOOL(c) = AS_INT(a) >= AS_INT(b); break;
+					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) >= AS_FLOAT(b); break;
+					default:
+						printf("Invalid type(s) for GREATER_EQUAL operation\n");
+				}
+				push(c);
+				break;
+			}
+			case OP_LESSER_EQUAL:{
+				value b = pop();
+				value a = pop();
+				// TODO: Need to check type of both values?
+				value c = (value){.type=BOOL_VAL};
+				switch (a.type) {
+					case INT_VAL: AS_BOOL(c) = AS_INT(a) <= AS_INT(b); break;
+					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) <= AS_FLOAT(b); break;
+					default:
+						printf("Invalid type(s) for LESSER_EQUAL operation\n");
+				}
+				push(c);
+				break;
+			}
+			default:{
+				// TODO: Improve this error reporting
+				printf("Unknow instruction in VM\n");
+				break;
+			}
 		}
 	}
 }

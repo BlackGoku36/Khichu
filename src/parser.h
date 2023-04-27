@@ -13,7 +13,7 @@ typedef struct{
 
 typedef enum op_enum{
 	NEGATE, ADD, SUB, MULT, DIV, INT_LIT, FLOAT_LIT, BOOL_LIT,
-	NOT
+	NOT, GREATER, LESSER, GREATER_EQUAL, LESSER_EQUAL,
 }op_enum;
 
 typedef struct ast_node{
