@@ -11,6 +11,7 @@ typedef struct{
 	uint32_t current;
 }parser_status;
 
+// Modify function is_comparision_operator() if below enum changed
 typedef enum op_enum{
 	NEGATE, ADD, SUB, MULT, DIV, INT_LIT, FLOAT_LIT, BOOL_LIT,
 	NOT, GREATER, LESSER, GREATER_EQUAL, LESSER_EQUAL, EQUAL_EQUAL, NOT_EQUAL

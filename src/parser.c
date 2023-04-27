@@ -286,6 +286,10 @@ void end_parser(){
 	write_chunk(current_chunk(), OP_RETURN);
 }
 
+bool is_comparision_operator(op_enum op){
+	return op >= 9 || op <= 14;
+}
+
 void analysis(ast_node* node){
 	if(node->left){
 		analysis(node->left);
@@ -358,6 +362,10 @@ void analysis(ast_node* node){
 			else if(node->op == LESSER_EQUAL) op_type = "<=";
 			else if(node->op == EQUAL_EQUAL) op_type = "==";
 			else if(node->op == NOT_EQUAL) op_type = "!=";
+
+			if(is_comparision_operator(node->left->op)){
+				parser_report_error2(source, node->left->loc, node->loc, "Comparision operator cannot be chained", true);
+			}
 
 			if(GET_TYPE(node->left->val) != GET_TYPE(node->right->val)){
 				parser_report_error2(source, node->left->loc, node->right->loc, "Type miss-match", false);

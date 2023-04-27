@@ -2,7 +2,6 @@
 
 ## TODO
 
-- Should error when analysis (does in VM): `1.0 < 2.0 < 3.0`
 - Implement strings (formating), to improve error messages.
 - Implement stack trace for debugging purpose (there was some zig trick to get this)
 - Add some tests running facility
