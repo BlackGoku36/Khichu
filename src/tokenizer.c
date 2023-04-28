@@ -25,11 +25,8 @@ void print_token(char* source, token token){
 		"U8", "U16", "U32", "U64", "I8", "I16", "I32", "I64", "F32", "F64", "TRUE", "FALSE", "BOOL",
 		"END_OF_FILE",
 	};
-	printf("Token, type: %s, str:", token_str[token.type]);
-	for (uint32_t i = token.loc.start; i < token.loc.end; i++) {
-			printf("%c", source[i]);
-	}
-	printf("\n");
+
+	printf("Token, type: %16s, str:`%.*s`\n", token_str[token.type], token.loc.end - token.loc.start, &source[token.loc.start]);
 }
 
 char peek(char* source, scanner_status scan_status){
@@ -264,6 +261,7 @@ token_pool scanner(char* source, uint32_t len){
 				}
 		}
 	}
-	produce_token(&token_pool, TOK_END_OF_FILE, scan_status.start, 0);
+
+	produce_token(&token_pool, TOK_END_OF_FILE, scan_status.start, scan_status.start);
 	return token_pool;
 }
