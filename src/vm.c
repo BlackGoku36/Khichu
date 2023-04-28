@@ -63,8 +63,10 @@ vm_error interpret(chunk* chunk){
 				switch (val.type) {
 					case INT_VAL: AS_INT(val) = -AS_INT(val); break;
 					case FLOAT_VAL: AS_FLOAT(val) = -AS_FLOAT(val); break;
-					default:
+					default:{
 						printf("Invalid type for NEGATE operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(val);
 				break;
@@ -72,12 +74,13 @@ vm_error interpret(chunk* chunk){
 			case OP_ADD:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				switch (a.type) {
 					case INT_VAL: AS_INT(a) += AS_INT(b); break;
 					case FLOAT_VAL: AS_FLOAT(a) += AS_FLOAT(b); break;
-					default:
-						printf("Invalid type(s) for ADD operation\n");
+					default:{
+						printf("Invalid type for ADD operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(a);
 				break;
@@ -85,12 +88,13 @@ vm_error interpret(chunk* chunk){
 			case OP_SUB:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				switch (a.type) {
 					case INT_VAL: AS_INT(a) -= AS_INT(b); break;
 					case FLOAT_VAL: AS_FLOAT(a) -= AS_FLOAT(b); break;
-					default:
-						printf("Invalid type(s) for SUB operation\n");
+					default:{
+						printf("Invalid type for SUB operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(a);
 				break;
@@ -98,12 +102,13 @@ vm_error interpret(chunk* chunk){
 			case OP_MULT:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				switch (a.type) {
 					case INT_VAL: AS_INT(a) *= AS_INT(b); break;
 					case FLOAT_VAL: AS_FLOAT(a) *= AS_FLOAT(b); break;
-					default:
-						printf("Invalid type(s) for MULT operation\n");
+					default:{
+						printf("Invalid type for MULT operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(a);
 				break;
@@ -111,12 +116,13 @@ vm_error interpret(chunk* chunk){
 			case OP_DIV:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				switch (a.type) {
 					case INT_VAL: AS_INT(a) /= AS_INT(b); break;
 					case FLOAT_VAL: AS_FLOAT(a) /= AS_FLOAT(b); break;
-					default:
-						printf("Invalid type(s) for DIV operation\n");
+					default:{
+						printf("Invalid type for DIV operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(a);
 				break;
@@ -124,13 +130,14 @@ vm_error interpret(chunk* chunk){
 			case OP_GREATER:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				value c = (value){.type=BOOL_VAL};
 				switch (a.type) {
 					case INT_VAL: AS_BOOL(c) = AS_INT(a) > AS_INT(b); break;
 					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) > AS_FLOAT(b); break;
-					default:
-						printf("Invalid type(s) for GREATER operation\n");
+					default:{
+						printf("Invalid type for GREATER operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(c);
 				break;
@@ -138,13 +145,14 @@ vm_error interpret(chunk* chunk){
 			case OP_LESSER:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				value c = (value){.type=BOOL_VAL};
 				switch (a.type) {
 					case INT_VAL: AS_BOOL(c) = AS_INT(a) < AS_INT(b); break;
 					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) < AS_FLOAT(b); break;
-					default:
-						printf("Invalid type(s) for LESSER operation\n");
+					default:{
+						printf("Invalid type for LESSER operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(c);
 				break;
@@ -152,13 +160,14 @@ vm_error interpret(chunk* chunk){
 			case OP_GREATER_EQUAL:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				value c = (value){.type=BOOL_VAL};
 				switch (a.type) {
 					case INT_VAL: AS_BOOL(c) = AS_INT(a) >= AS_INT(b); break;
 					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) >= AS_FLOAT(b); break;
-					default:
-						printf("Invalid type(s) for GREATER_EQUAL operation\n");
+					default:{
+						printf("Invalid type for GREATER_EQUAL operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(c);
 				break;
@@ -166,13 +175,14 @@ vm_error interpret(chunk* chunk){
 			case OP_LESSER_EQUAL:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				value c = (value){.type=BOOL_VAL};
 				switch (a.type) {
 					case INT_VAL: AS_BOOL(c) = AS_INT(a) <= AS_INT(b); break;
 					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) <= AS_FLOAT(b); break;
-					default:
-						printf("Invalid type(s) for LESSER_EQUAL operation\n");
+					default:{
+						printf("Invalid type for LESSER_EQUAL operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(c);
 				break;
@@ -180,14 +190,15 @@ vm_error interpret(chunk* chunk){
 			case OP_EQUAL_EQUAL:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				value c = (value){.type=BOOL_VAL};
 				switch (a.type) {
 					case INT_VAL: AS_BOOL(c) = AS_INT(a) == AS_INT(b); break;
 					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) == AS_FLOAT(b); break;
 					case BOOL_VAL: AS_BOOL(c) = AS_BOOL(a) == AS_BOOL(b); break;
-					default:
-						printf("Invalid type(s) for EQUAL_EQUAL operation\n");
+					default:{
+						printf("Invalid type for EQUAL_EQUAL operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(c);
 				break;
@@ -195,14 +206,15 @@ vm_error interpret(chunk* chunk){
 			case OP_NOT_EQUAL:{
 				value b = pop();
 				value a = pop();
-				// TODO: Need to check type of both values?
 				value c = (value){.type=BOOL_VAL};
 				switch (a.type) {
 					case INT_VAL: AS_BOOL(c) = AS_INT(a) != AS_INT(b); break;
 					case FLOAT_VAL: AS_BOOL(c) = AS_FLOAT(a) != AS_FLOAT(b); break;
 					case BOOL_VAL: AS_BOOL(c) = AS_BOOL(a) != AS_BOOL(b); break;
-					default:
-						printf("Invalid type(s) for NOT_EQUAL operation\n");
+					default:{
+						printf("Invalid type for NOT_EQUAL operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(c);
 				break;
@@ -212,8 +224,10 @@ vm_error interpret(chunk* chunk){
 				value a = pop();
 				switch (a.type) {
 					case BOOL_VAL: AS_BOOL(a) = AS_BOOL(a) && AS_BOOL(b); break;
-					default:
-						printf("Invalid type(s) for AND operation\n");
+					default:{
+						printf("Invalid type for AND operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(a);
 				break;
@@ -223,16 +237,17 @@ vm_error interpret(chunk* chunk){
 				value a = pop();
 				switch (a.type) {
 					case BOOL_VAL: AS_BOOL(a) = AS_BOOL(a) || AS_BOOL(b); break;
-					default:
-						printf("Invalid type(s) for NOT_EQUAL operation\n");
+					default:{
+						printf("Invalid type for OR operation\n");
+						return RUN_TIME_ERROR;
+					}
 				}
 				push(a);
 				break;
 			}
 			default:{
-				// TODO: Improve this error reporting
 				printf("Unknow instruction in VM\n");
-				break;
+				return RUN_TIME_ERROR;
 			}
 		}
 	}

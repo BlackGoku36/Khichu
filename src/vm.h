@@ -7,7 +7,7 @@
 #define MAX_STACK 256
 
 typedef enum{
-	OK, COMP_TIME_ERROR, RUN_TIME_ERROR
+	OK, RUN_TIME_ERROR
 }vm_error;
 
 typedef struct{

@@ -206,7 +206,6 @@ ast_node* primary(parser_status* parser_status){
 }
 
 ast_node* unary(parser_status* parser_status){
-	// TODO: ADD '!' support
 	if(match(*parser_status, TOK_MINUS)){
 		token minus_token = tokens[parser_status->current];
 		parser_consume(parser_status);
