@@ -76,6 +76,8 @@ uint32_t print_op_code(chunk* chunk, uint32_t offset){
 		case OP_LESSER_EQUAL:{printf("OP_LESSER_EQUAL\n"); return offset + 1;}
 		case OP_EQUAL_EQUAL:{printf("OP_EQUAL_EQUAL\n"); return offset + 1;}
 		case OP_NOT_EQUAL:{printf("OP_NOT_EQUAL\n"); return offset + 1;}
+		case OP_AND:{printf("OP_AND\n"); return offset + 1;}
+		case OP_OR:{printf("OP_OR\n"); return offset + 1;}
 		default:{
 			printf("Invalid op code: %d\n", op);
 			return offset + 1;
@@ -84,7 +86,7 @@ uint32_t print_op_code(chunk* chunk, uint32_t offset){
 }
 
 void print_chunk(chunk* chunk, char* label){
-	printf("--- chunk: %s ---\n", label);
+	printf("\n--- CHUNK: %s ---\n", label);
 	for (uint32_t i = 0; i < chunk->len;) {
 		i = print_op_code(chunk, i);
 	}

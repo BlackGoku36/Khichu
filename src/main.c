@@ -24,6 +24,7 @@ int main(void){
 	fclose(file_ptr);
 
 	token_pool tokens = scanner(buffer, numbytes);
+	printf("\n----- TOKENS -----\n");
 	for (uint32_t i = 0; i < tokens.cursor; i++) {
 		print_token(buffer, tokens.pool[i]);
 	}
@@ -33,6 +34,7 @@ int main(void){
 	parse(&tokens, buffer, &chunk);
 	free(buffer);
 	print_chunk(&chunk, "Test");
+	printf("\n----- VM -----\n");
 	interpret(&chunk);
 	free_vm();
 	deinit_chunk(&chunk);

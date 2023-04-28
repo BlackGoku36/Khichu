@@ -13,6 +13,7 @@ void print_token(char* source, token token){
 		"INT", "FLOAT",
 		"STRING",
 		"PLUS", "MINUS", "STAR", "SLASH", "NOT",
+		"AMP", "AMP_AMP", "PIPE", "PIPE_PIPE",
 		"EQUAL", "LESSER", "GREATER",
 		"LESSER_LESSER", "GREATER_GREATER",
 		"EQUAL_EQUAL", "NOT_EQUAL", "LESSER_EQUAL", "GREATER_EQUAL",
@@ -230,6 +231,14 @@ token_pool scanner(char* source, uint32_t len){
 			}
 			case '!':{
 				token_type type = match_consume(source, &scan_status, '=') ? TOK_NOT_EQUAL : TOK_NOT;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current); break;
+			}
+			case '&':{
+				token_type type = match_consume(source, &scan_status, '&') ? TOK_AMP_AMP : TOK_AMP;
+				produce_token(&token_pool, type, scan_status.start, scan_status.current); break;
+			}
+			case '|':{
+				token_type type = match_consume(source, &scan_status, '|') ? TOK_PIPE_PIPE : TOK_PIPE;
 				produce_token(&token_pool, type, scan_status.start, scan_status.current); break;
 			}
 			case ' ': break;

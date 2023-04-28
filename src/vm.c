@@ -207,6 +207,28 @@ vm_error interpret(chunk* chunk){
 				push(c);
 				break;
 			}
+			case OP_AND:{
+				value b = pop();
+				value a = pop();
+				switch (a.type) {
+					case BOOL_VAL: AS_BOOL(a) = AS_BOOL(a) && AS_BOOL(b); break;
+					default:
+						printf("Invalid type(s) for AND operation\n");
+				}
+				push(a);
+				break;
+			}
+			case OP_OR:{
+				value b = pop();
+				value a = pop();
+				switch (a.type) {
+					case BOOL_VAL: AS_BOOL(a) = AS_BOOL(a) || AS_BOOL(b); break;
+					default:
+						printf("Invalid type(s) for NOT_EQUAL operation\n");
+				}
+				push(a);
+				break;
+			}
 			default:{
 				// TODO: Improve this error reporting
 				printf("Unknow instruction in VM\n");

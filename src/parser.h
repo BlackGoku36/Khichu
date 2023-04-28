@@ -14,7 +14,8 @@ typedef struct{
 // Modify function is_comparision_operator() if below enum changed
 typedef enum op_enum{
 	NEGATE, ADD, SUB, MULT, DIV, INT_LIT, FLOAT_LIT, BOOL_LIT,
-	NOT, GREATER, LESSER, GREATER_EQUAL, LESSER_EQUAL, EQUAL_EQUAL, NOT_EQUAL
+	NOT, GREATER, LESSER, GREATER_EQUAL, LESSER_EQUAL, EQUAL_EQUAL, NOT_EQUAL,
+	AND, OR
 }op_enum;
 
 typedef struct ast_node{

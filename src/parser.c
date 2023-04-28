@@ -160,6 +160,8 @@ op_enum get_operator(token_type type){
 		case TOK_LESSER_EQUAL: op = LESSER_EQUAL; break;
 		case TOK_EQUAL_EQUAL: op = EQUAL_EQUAL; break;
 		case TOK_NOT_EQUAL: op = NOT_EQUAL; break;
+		case TOK_AMP_AMP: op = AND; break;
+		case TOK_PIPE_PIPE: op = OR; break;
 		default:
 			printf("Invalid OP type\n");
 	}
@@ -265,8 +267,19 @@ ast_node* equality(parser_status* parser_status){
 	return left;
 }
 
+ast_node* logical(parser_status* parser_status){
+	ast_node* left = equality(parser_status);
+	while(match2(*parser_status, TOK_AMP_AMP, TOK_PIPE_PIPE)){
+		op_enum op = get_operator(parser_peek(*parser_status).type);
+		parser_consume(parser_status);
+		ast_node* right = equality(parser_status);
+		left = make_ast_node(op, left, right, (value){.type = BOOL_VAL}, (loc_info){.start=left->loc.start, .end=right->loc.end});
+	}
+	return left;
+}
+
 ast_node* expression(parser_status* parser_status){
-	return equality(parser_status);
+	return logical(parser_status);
 }
 
 chunk* current_chunk(){
@@ -287,7 +300,7 @@ void end_parser(){
 }
 
 bool is_comparision_operator(op_enum op){
-	return op >= 9 || op <= 14;
+	return op >= 9 && op <= 14;
 }
 
 void analysis(ast_node* node){
@@ -349,7 +362,7 @@ void analysis(ast_node* node){
 
 			if(GET_TYPE(node->left->val) == GET_TYPE(node->right->val) && GET_TYPE(node->left->val) == BOOL_VAL){
 				parser_report_error2(source, node->left->loc, node->right->loc, "Type miss-match", false);
-				printf("Can't compare type BOOL and BOOL\n");
+				printf("Can't compare type Bool and Bool\n");
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -363,7 +376,7 @@ void analysis(ast_node* node){
 			else if(node->op == EQUAL_EQUAL) op_type = "==";
 			else if(node->op == NOT_EQUAL) op_type = "!=";
 
-			if(is_comparision_operator(node->left->op)){
+			if(is_comparision_operator(node->left->op) && is_comparision_operator(node->op)){
 				parser_report_error2(source, node->left->loc, node->loc, "Comparision operator cannot be chained", true);
 			}
 
@@ -374,7 +387,39 @@ void analysis(ast_node* node){
 			}
 			break;
 		}
+		case AND:
+		case OR:{
+			const char* op_type;
+			if(node->op == AND) op_type = "&&";
+			else if(node->op == OR) op_type = "||";
+			if(GET_TYPE(node->left->val) != BOOL_VAL || GET_TYPE(node->right->val) != BOOL_VAL){
+				parser_report_error2(source, node->left->loc, node->right->loc, "Type miss-match", false);
+				printf("Can't use operator '%s' on type %s and %s, expected type Bool(s).\n", op_type, type_str(node->left->val), type_str(node->right->val));
+				exit(EXIT_FAILURE);
+			}
+		}
 		default:;
+	}
+}
+
+void print_ast(ast_node* node, uint8_t left, uint32_t level){
+	if(node->left){
+		print_ast(node->left, 1, level + 1);
+	}
+
+	for (int i = 0; i < level; i++)
+        printf(i == level - 1 ? "|-" : "  ");
+
+	if(left == 1){
+		printf("%d (left)\n", node->op);
+	}else if(left == 2){
+		printf("%d (right)\n", node->op);
+	}else{
+		printf("%d (root)\n", node->op);
+	}
+
+	if(node->right){
+		print_ast(node->right, 2, level + 1);
 	}
 }
 
@@ -449,6 +494,14 @@ void code_gen(ast_node* node){
 			emit_bytecode(OP_NOT_EQUAL);
 			break;
 		}
+		case AND:{
+			emit_bytecode(OP_AND);
+			break;
+		}
+		case OR:{
+			emit_bytecode(OP_OR);
+			break;
+		}
 	    default:
 	      printf("Unknown AST operator %d\n", node->op);
 	      exit(1);
@@ -463,6 +516,8 @@ void parse(token_pool* toks, char* code, chunk* chunk){
 
 	ast_node* start = expression(&parser_status);
 	parser_match_consume(&parser_status, TOK_END_OF_FILE, "Expected end of expression", parser_peek(parser_status));
+	printf("\n----- AST -----\n");
+	print_ast(start, 0, 0);
 	analysis(start);
 	code_gen(start);
 	end_parser();
