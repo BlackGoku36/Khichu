@@ -5,6 +5,7 @@
 - Implement strings (formating), to improve error messages.
 - Implement stack trace for debugging purpose (there was some zig trick to get this)
 - Add some tests running facility
+- If expression is distributed on multiple lines, at what line does parser report error?
 
 ## Compile and Run
 
