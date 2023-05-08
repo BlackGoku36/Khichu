@@ -69,8 +69,9 @@ pub const Parser = struct {
             return parser.ast.addLiteralNode(.bool_literal, bool_lit.loc);
         }
         if (parser.match(.left_paren)) {
+            const left_paren = parser.peekPrev();
             var expr: u32 = parser.expression();
-            if (!parser.match(.right_paren)) std.debug.print("Expected ')' after expression", .{});
+            if (!parser.match(.right_paren)) parser.reportError(left_paren.loc, "Expected ')' after expression\n", .{}, true);
             return expr;
         }
 
