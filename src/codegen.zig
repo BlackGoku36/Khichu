@@ -25,7 +25,7 @@ fn generateCodeFromAst(ast: *Ast, node: u32, source: []u8, pool: *ByteCodePool) 
                 std.debug.print("Error while parsing int literal: {any}\n", .{err});
             }
             pool.emitBytecode(.bc_constant);
-            pool.emitBytecode(@intToEnum(ByteCode, pool.addConstant(.{ .int = int })));
+            pool.emitBytecode(@as(ByteCode, @enumFromInt(pool.addConstant(.{ .int = int }))));
         },
         .float_literal => {
             var float: f32 = 0.0;
@@ -35,7 +35,7 @@ fn generateCodeFromAst(ast: *Ast, node: u32, source: []u8, pool: *ByteCodePool) 
                 std.debug.print("Error while parsing float literal: {any}\n", .{err});
             }
             pool.emitBytecode(.bc_constant);
-            pool.emitBytecode(@intToEnum(ByteCode, pool.addConstant(.{ .float = float })));
+            pool.emitBytecode(@as(ByteCode, @enumFromInt(pool.addConstant(.{ .float = float }))));
         },
         .bool_literal => {
             var boolean: bool = false;
@@ -45,7 +45,7 @@ fn generateCodeFromAst(ast: *Ast, node: u32, source: []u8, pool: *ByteCodePool) 
                 boolean = false;
             }
             pool.emitBytecode(.bc_constant);
-            pool.emitBytecode(@intToEnum(ByteCode, pool.addConstant(.{ .boolean = boolean })));
+            pool.emitBytecode(@as(ByteCode, @enumFromInt(pool.addConstant(.{ .boolean = boolean }))));
         },
         .bool_not => pool.emitBytecode(.bc_not),
         .bool_and => pool.emitBytecode(.bc_and),

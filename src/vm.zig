@@ -41,7 +41,7 @@ pub const VM = struct {
                     return;
                 },
                 .bc_constant => {
-                    try vm.stack.append(vm.pool.values.items[@enumToInt(vm.readInstruction())]);
+                    try vm.stack.append(vm.pool.values.items[@intFromEnum(vm.readInstruction())]);
                 },
                 .bc_not => {
                     var value = vm.stack.pop();

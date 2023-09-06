@@ -87,7 +87,7 @@ pub const Ast = struct {
     }
 
     pub fn addNode(ast: *Ast, expr_type: Type, left: u32, right: u32, loc: LocInfo) u32 {
-        const idx: u32 = @intCast(u32, ast.nodes.items.len);
+        const idx: u32 = @as(u32, @intCast(ast.nodes.items.len));
         ast.nodes.append(.{ .type = expr_type, .left = left, .right = right, .loc = loc }) catch |err| {
             std.debug.print("Error while adding node: {any}", .{err});
         };

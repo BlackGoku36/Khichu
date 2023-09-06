@@ -227,7 +227,7 @@ pub const Tokenizer = struct {
         }
         std.debug.print("\n", .{});
 
-        std.process.exit(@boolToInt(exit));
+        std.process.exit(@intFromBool(exit));
     }
 
     pub fn print(tokenizer: *Tokenizer) void {

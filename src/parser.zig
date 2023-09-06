@@ -215,16 +215,15 @@ pub const Parser = struct {
 
         switch (node.type) {
             .add, .sub, .mult, .div => {
-                if(left_node.type != right_node.type and left_node.isNumberalLiteral() and right_node.isNumberalLiteral()){
+                if (left_node.type != right_node.type and left_node.isNumberalLiteral() and right_node.isNumberalLiteral()) {
                     parser.reportError(node.loc, "Types miss-match between '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                     parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                     parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);
-                } else if(left_node.type == .bool_literal or right_node.type == .bool_literal){
+                } else if (left_node.type == .bool_literal or right_node.type == .bool_literal) {
                     parser.reportError(node.loc, "Unexpected type(s) '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                     parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                     parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);
-                }
-                else{
+                } else {
                     var new_node = left_node;
                     new_node.loc.start = left_node.loc.start;
                     new_node.loc.end = right_node.loc.end;
@@ -236,7 +235,7 @@ pub const Parser = struct {
                     parser.reportError(node.loc, "Types miss-match, expected type bool(s) found '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                     parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                     parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);
-                }else{
+                } else {
                     var new_node = left_node;
                     new_node.loc.start = left_node.loc.start;
                     new_node.loc.end = right_node.loc.end;
@@ -285,12 +284,12 @@ pub const Parser = struct {
                 if (node.left != nan_u32 and node.right != nan_u32) {
                     const left_node = parser.ast.nodes.items[node.left];
                     const right_node = parser.ast.nodes.items[node.right];
-                    if(left_node.isTypeLiteral() and right_node.isTypeLiteral()){
-                        if(left_node.type != right_node.type){
+                    if (left_node.isTypeLiteral() and right_node.isTypeLiteral()) {
+                        if (left_node.type != right_node.type) {
                             parser.reportError(node.loc, "Types miss-match between '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                             parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                             parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);
-                        }else if(left_node.type == .bool_literal or right_node.type == .bool_literal){
+                        } else if (left_node.type == .bool_literal or right_node.type == .bool_literal) {
                             parser.reportError(node.loc, "Unexpected type(s) '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                             parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                             parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);

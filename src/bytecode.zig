@@ -75,7 +75,7 @@ pub const ByteCodePool = struct {
         pool.values.append(value) catch |err| {
             std.debug.print("Error while adding to values: {any}\n", .{err});
         };
-        return @intCast(u32, pool.values.items.len - 1);
+        return @as(u32, @intCast(pool.values.items.len - 1));
     }
 
     pub fn print(pool: *ByteCodePool) void {
@@ -89,7 +89,7 @@ pub const ByteCodePool = struct {
                 },
                 .bc_constant => {
                     std.debug.print("bc_constant: ", .{});
-                    var value = pool.values.items[@enumToInt(pool.bytecodes.items[offset + 1])];
+                    var value = pool.values.items[@intFromEnum(pool.bytecodes.items[offset + 1])];
                     switch (value) {
                         .int => |val| std.debug.print("{d}\n", .{val}),
                         .float => |val| std.debug.print("{d}\n", .{val}),
