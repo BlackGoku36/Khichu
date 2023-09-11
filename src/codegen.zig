@@ -56,6 +56,28 @@ fn generateCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePo
         .lesser_equal => pool.emitBytecodeOp(.op_less_than),
         .equal_equal => pool.emitBytecodeOp(.op_equal),
         .not_equal => pool.emitBytecodeOp(.op_not_equal),
+        .identifier => {
+            const name: []u8 = source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end];
+            // TODO: Add check for identifier not declared
+            pool.emitBytecodeAdd(.op_unload_gv, @intCast(pool.global_var_tables.values.getIndex(name).?));
+        },
+        .assign_stmt => {
+            const left = ast.nodes.items[node_idx].left;
+            const right = ast.nodes.items[node_idx].right;
+            generateCodeFromAst(ast, right, source, pool);
+            const name: []u8 = source[ast.nodes.items[left].loc.start..ast.nodes.items[left].loc.end];
+            // TODO: Add check for identifier not declared
+            pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(name).?));
+        },
+        else => {},
+    }
+}
+
+pub fn generateCode(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePool) void {
+    // generateCodeFromAst(ast, node, source, pool);
+    // pool.emitBytecodeOp(.op_return);
+
+    switch (ast.nodes.items[node_idx].type) {
         .var_stmt => {
             const node = ast.nodes.items[node_idx];
             const symbol_entry = Symbol.varTable.get(node.symbol_idx);
@@ -72,22 +94,25 @@ fn generateCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePo
                     value = .{.boolean = false};
                 },
             }
-            
             pool.global_var_tables.values.put(symbol_entry.name, value) catch |err|{
                 std.debug.print("Unable to create global variable entry: {}", .{err});
             };
             pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(symbol_entry.name).?));
         },
-        .print_stmt => pool.emitBytecodeOp(.op_print),
-        .identifier => {
-            const name: []u8 = source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end];
+        .print_stmt => {
+            const left = ast.nodes.items[node_idx].left;
+            generateCodeFromAst(ast, left, source, pool);
+            pool.emitBytecodeOp(.op_print);
+        },
+        .assign_stmt => {
+            const left = ast.nodes.items[node_idx].left;
+            const right = ast.nodes.items[node_idx].right;
+            generateCodeFromAst(ast, right, source, pool);
+            const name: []u8 = source[ast.nodes.items[left].loc.start..ast.nodes.items[left].loc.end];
             // TODO: Add check for identifier not declared
-            pool.emitBytecodeAdd(.op_unload_gv, @intCast(pool.global_var_tables.values.getIndex(name).?));
-        }
+            pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(name).?));
+        },
+        else => {}
     }
-}
-
-pub fn generateCode(ast: *Ast, node: u32, source: []u8, pool: *ByteCodePool) void {
-    generateCodeFromAst(ast, node, source, pool);
     // pool.emitBytecodeOp(.op_return);
 }

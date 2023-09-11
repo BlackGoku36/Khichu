@@ -47,9 +47,10 @@ pub fn main() !void {
 
     for (parser.ast_roots.items) |roots| {
         codegen.generateCode(&parser.ast, roots, source, &bytecode_pool);
-        std.debug.print("\n------ BYTECODE ------\n", .{});
-        bytecode_pool.print();
     }
+
+    std.debug.print("\n------ BYTECODE ------\n", .{});
+    bytecode_pool.print();
 
     Symbol.destroyTables();
 

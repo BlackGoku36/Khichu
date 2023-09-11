@@ -175,8 +175,33 @@ pub const Parser = struct {
         return left;
     }
 
+    fn assignment(parser: *Parser) u32 {
+        const ident_node = parser.logical();
+        if(parser.match(.equal)){
+            if(parser.token_pool.items[ident_node].type != .identifier){
+                std.debug.print("Expected identifier before '='\n", .{});
+            }
+            const expr_node = parser.assignment();
+            const loc: LocInfo = .{
+                .start = parser.token_pool.items[ident_node].loc.start, 
+                .end = parser.peekPrev().loc.end, 
+                .line = parser.token_pool.items[ident_node].loc.line
+            };
+            return parser.ast.addNode(.assign_stmt, std.math.nan_u32, ident_node, expr_node, loc);
+        }
+        return ident_node;
+    }
+
     fn expression(parser: *Parser) u32 {
-        return parser.logical();
+        return parser.assignment();
+    }
+
+    fn expressionStatement(parser: *Parser) u32 {
+        const expr = parser.expression();
+        if(!parser.match(.semi_colon)){
+            std.debug.print("Expected ';' after expression\n", .{});
+        }
+        return expr;
     }
 
     //TODO: check if this can be cleaned up
@@ -403,9 +428,14 @@ pub const Parser = struct {
                     std.debug.print("Unable to append var statment ast node to root list: {}", .{err});
                 };
             }
-            if (parser.peek().type == .print){
+            else if (parser.peek().type == .print){
                 parser.ast_roots.append(parser.printStatement()) catch |err|{
                     std.debug.print("Unable to append print statment ast node to root list: {}", .{err});
+                };
+            }
+            else {
+                    parser.ast_roots.append(parser.expressionStatement()) catch |err|{
+                    std.debug.print("Unable to append expression statment ast node to root list: {}", .{err});
                 };
             }
         }

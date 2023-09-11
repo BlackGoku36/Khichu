@@ -1,3 +1,9 @@
 var x: float = 8.2 + 2.1 * 3.8;
-x = 10.0;
+var y: float = 10.0;
+x = 2.0 + y;
 print(x + 2.0);
+x = 5.0;
+x = y * x;
+print(x);
+print(x = 2.0);
+print(x);
