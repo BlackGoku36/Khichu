@@ -3,7 +3,7 @@
 ## TODO
 
 - Add some tests running facility
-- Add symbols table
+- Disallow variable shadowing
 
 ## Compile and Run
 

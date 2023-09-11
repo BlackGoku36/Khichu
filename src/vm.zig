@@ -30,8 +30,8 @@ pub const VM = struct {
     pub fn run(vm: *VM) !void {
         while (vm.ip < vm.pool.bytecodes.items.len) {
             const instruction = vm.readInstruction();
-            switch (instruction) {
-                .bc_return => {
+            switch (instruction.op_code) {
+                .op_return => {
                     const value = vm.stack.pop();
                     switch (value) {
                         .int => |val| std.debug.print("{d}\n", .{val}),
@@ -40,10 +40,10 @@ pub const VM = struct {
                     }
                     return;
                 },
-                .bc_constant => {
-                    try vm.stack.append(vm.pool.values.items[@intFromEnum(vm.readInstruction())]);
+                .op_constant => {
+                    try vm.stack.append(vm.pool.values.items[instruction.address]);
                 },
-                .bc_not => {
+                .op_not => {
                     var value = vm.stack.pop();
                     switch (value) {
                         .int => std.debug.print("Invalid type for bc_not operation\n", .{}),
@@ -52,7 +52,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(value);
                 },
-                .bc_negate => {
+                .op_negate => {
                     var value = vm.stack.pop();
                     switch (value) {
                         .int => value.int = -value.int,
@@ -61,7 +61,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(value);
                 },
-                .bc_add => {
+                .op_add => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     switch (a) {
@@ -71,7 +71,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(a);
                 },
-                .bc_sub => {
+                .op_sub => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     switch (a) {
@@ -81,7 +81,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(a);
                 },
-                .bc_mult => {
+                .op_mult => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     switch (a) {
@@ -91,7 +91,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(a);
                 },
-                .bc_div => {
+                .op_div => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     switch (a) {
@@ -101,7 +101,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(a);
                 },
-                .bc_greater => {
+                .op_greater => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     var c: Value = .{ .boolean = false };
@@ -112,7 +112,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(c);
                 },
-                .bc_less => {
+                .op_less => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     var c: Value = .{ .boolean = false };
@@ -123,7 +123,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(c);
                 },
-                .bc_greater_than => {
+                .op_greater_than => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     var c: Value = .{ .boolean = false };
@@ -134,7 +134,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(c);
                 },
-                .bc_less_than => {
+                .op_less_than => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     var c: Value = .{ .boolean = false };
@@ -145,7 +145,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(c);
                 },
-                .bc_equal => {
+                .op_equal => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     var c: Value = .{ .boolean = false };
@@ -156,7 +156,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(c);
                 },
-                .bc_not_equal => {
+                .op_not_equal => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     var c: Value = .{ .boolean = false };
@@ -167,7 +167,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(c);
                 },
-                .bc_and => {
+                .op_and => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     switch (a) {
@@ -177,7 +177,7 @@ pub const VM = struct {
                     }
                     try vm.stack.append(a);
                 },
-                .bc_or => {
+                .op_or => {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     switch (a) {
@@ -186,6 +186,13 @@ pub const VM = struct {
                         .boolean => a.boolean = a.boolean or b.boolean,
                     }
                     try vm.stack.append(a);
+                },
+                .op_load_gv => {
+                    var a = vm.stack.pop();
+                    var key = vm.pool.global_var_tables.values.keys()[instruction.address];
+                    vm.pool.global_var_tables.values.put(key, a) catch |err|{
+                        std.debug.print("Unable to assign value to variable: {}", .{err});
+                    };
                 },
             }
         }

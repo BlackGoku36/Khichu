@@ -1,45 +1,28 @@
 const std = @import("std");
 
-pub const ByteCode = enum {
-    bc_return,
-    bc_constant,
-    bc_negate,
-    bc_add,
-    bc_sub,
-    bc_mult,
-    bc_div,
-    bc_greater,
-    bc_less,
-    bc_greater_than,
-    bc_less_than,
-    bc_equal,
-    bc_not_equal,
-    bc_not,
-    bc_and,
-    bc_or,
+pub const opCode = enum{
+    op_return,
+    op_constant,
+    op_negate,
+    op_add,
+    op_sub,
+    op_mult,
+    op_div,
+    op_greater,
+    op_less,
+    op_greater_than,
+    op_less_than,
+    op_equal,
+    op_not_equal,
+    op_not,
+    op_and,
+    op_or,
+    op_load_gv,
+};
 
-    // pub fn str(bytecode: *ByteCode) []u8 {
-    //     switch(bytecode){
-    //         bc_return => "bc_return",
-    //         bc_constant => "bc_constant",
-    //         bc_negate => "bc_negate",
-    //         bc_add => "bc_add",
-    //         bc_sub => "bc_sub",
-    //         bc_mult => "bc_mult",
-    //         bc_div => "bc_div",
-    //         bc_true => "bc_true",
-    //         bc_false => "bc_false",
-    //         bc_greater => "bc_greater",
-    //         bc_less => "bc_less",
-    //         bc_greater_than => "bc_greater_than",
-    //         bc_less_than => "bc_less_than",
-    //         bc_equal => "bc_equal",
-    //         bc_not_equal => "bc_not_equal",
-    //         bc_not => "bc_not",
-    //         bc_and => "bc_and",
-    //         bc_or => "bc_or",
-    //     }
-    // }
+pub const ByteCode = struct{
+    op_code: opCode,
+    address: u32,
 };
 
 pub const ValueType = enum { int, float, boolean };
@@ -49,13 +32,41 @@ pub const Value = union(ValueType) {
     boolean: bool,
 };
 
+pub const GlobalVarTables = struct{
+    values: std.StringArrayHashMap(Value),
+
+    pub fn init(allocator: std.mem.Allocator) GlobalVarTables {
+        return .{
+            .values = std.StringArrayHashMap(Value).init(allocator),
+        };
+    }
+
+    pub fn print(gv_table: *GlobalVarTables) void {
+        var map_iter = gv_table.values.iterator();
+        while(map_iter.next()) |entry|{
+            std.debug.print("key: {s}, ", .{entry.key_ptr.*});
+            switch (entry.value_ptr.*) {
+                .int => |val| std.debug.print("value: {d}\n", .{val}),
+                .float => |val| std.debug.print("value: {d}\n", .{val}),
+                .boolean => |val| std.debug.print("value: {any}\n", .{val}),
+            }
+        }
+    }
+
+    pub fn deinit(gv_table: *GlobalVarTables) void {
+        gv_table.values.deinit();
+    }
+};
+
 pub const ByteCodePool = struct {
     bytecodes: std.ArrayList(ByteCode),
+    global_var_tables: GlobalVarTables,
     values: std.ArrayList(Value),
 
     pub fn init(allocator: std.mem.Allocator) ByteCodePool {
         return .{
             .bytecodes = std.ArrayList(ByteCode).init(allocator),
+            .global_var_tables = GlobalVarTables.init(allocator),
             .values = std.ArrayList(Value).init(allocator),
         };
     }
@@ -63,10 +74,17 @@ pub const ByteCodePool = struct {
     pub fn deinit(pool: *ByteCodePool) void {
         pool.bytecodes.deinit();
         pool.values.deinit();
+        pool.global_var_tables.deinit();
     }
 
-    pub fn emitBytecode(pool: *ByteCodePool, bytecode: ByteCode) void {
-        pool.bytecodes.append(bytecode) catch |err| {
+    pub fn emitBytecodeOp(pool: *ByteCodePool, op_code: opCode) void {
+        pool.bytecodes.append(.{.op_code = op_code, .address = std.math.nan_u32}) catch |err| {
+            std.debug.print("Error while adding to bytecodes: {any}\n", .{err});
+        };
+    }
+
+    pub fn emitBytecodeAdd(pool: *ByteCodePool, op_code: opCode, address: u32) void {
+        pool.bytecodes.append(.{.op_code = op_code, .address = address}) catch |err| {
             std.debug.print("Error while adding to bytecodes: {any}\n", .{err});
         };
     }
@@ -75,82 +93,86 @@ pub const ByteCodePool = struct {
         pool.values.append(value) catch |err| {
             std.debug.print("Error while adding to values: {any}\n", .{err});
         };
-        return @as(u32, @intCast(pool.values.items.len - 1));
+        return @intCast(pool.values.items.len - 1);
     }
 
     pub fn print(pool: *ByteCodePool) void {
         var offset: u32 = 0;
 
         while (offset < pool.bytecodes.items.len) {
-            switch (pool.bytecodes.items[offset]) {
-                .bc_return => {
+            switch (pool.bytecodes.items[offset].op_code) {
+                .op_return => {
                     std.debug.print("bc_return\n", .{});
                     offset += 1;
                 },
-                .bc_constant => {
+                .op_constant => {
                     std.debug.print("bc_constant: ", .{});
-                    var value = pool.values.items[@intFromEnum(pool.bytecodes.items[offset + 1])];
+                    var value = pool.values.items[pool.bytecodes.items[offset].address];
                     switch (value) {
                         .int => |val| std.debug.print("{d}\n", .{val}),
                         .float => |val| std.debug.print("{d}\n", .{val}),
                         .boolean => |val| std.debug.print("{any}\n", .{val}),
                     }
-                    offset += 2;
+                    offset += 1;
                 },
-                .bc_negate => {
+                .op_negate => {
                     std.debug.print("bc_negate\n", .{});
                     offset += 1;
                 },
-                .bc_add => {
+                .op_add => {
                     std.debug.print("bc_add\n", .{});
                     offset += 1;
                 },
-                .bc_sub => {
+                .op_sub => {
                     std.debug.print("bc_sub\n", .{});
                     offset += 1;
                 },
-                .bc_mult => {
+                .op_mult => {
                     std.debug.print("bc_mult\n", .{});
                     offset += 1;
                 },
-                .bc_div => {
+                .op_div => {
                     std.debug.print("bc_div\n", .{});
                     offset += 1;
                 },
-                .bc_greater => {
+                .op_greater => {
                     std.debug.print("bc_greater\n", .{});
                     offset += 1;
                 },
-                .bc_less => {
+                .op_less => {
                     std.debug.print("bc_less\n", .{});
                     offset += 1;
                 },
-                .bc_greater_than => {
+                .op_greater_than => {
                     std.debug.print("bc_greater_than\n", .{});
                     offset += 1;
                 },
-                .bc_less_than => {
+                .op_less_than => {
                     std.debug.print("bc_less_than\n", .{});
                     offset += 1;
                 },
-                .bc_equal => {
+                .op_equal => {
                     std.debug.print("bc_equal\n", .{});
                     offset += 1;
                 },
-                .bc_not_equal => {
+                .op_not_equal => {
                     std.debug.print("bc_not_equal\n", .{});
                     offset += 1;
                 },
-                .bc_not => {
+                .op_not => {
                     std.debug.print("bc_not\n", .{});
                     offset += 1;
                 },
-                .bc_and => {
+                .op_and => {
                     std.debug.print("bc_and\n", .{});
                     offset += 1;
                 },
-                .bc_or => {
+                .op_or => {
                     std.debug.print("bc_or\n", .{});
+                    offset += 1;
+                },
+                .op_load_gv => {
+                    std.debug.print("bc_load_gv: {d}\n", .{pool.bytecodes.items[offset].address});
                     offset += 1;
                 },
             }

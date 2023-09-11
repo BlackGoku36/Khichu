@@ -7,6 +7,8 @@ const Token = tokenizer.Token;
 const Tokenizer = tokenizer.Tokenizer;
 const TokenType = tokenizer.TokenType;
 const LocInfo = tokenizer.LocInfo;
+const Symbol = @import("symbol.zig").Symbol;
+const SymbolType = @import("symbol.zig").Type;
 
 const nan_u32 = std.math.nan_u32;
 
@@ -58,15 +60,15 @@ pub const Parser = struct {
     fn primary(parser: *Parser) u32 {
         if (parser.match(.int)) {
             const int_lit = parser.peekPrev();
-            return parser.ast.addLiteralNode(.int_literal, int_lit.loc);
+            return parser.ast.addLiteralNode(.int_literal, std.math.nan_u32, int_lit.loc);
         }
         if (parser.match(.float)) {
             const float_lit = parser.peekPrev();
-            return parser.ast.addLiteralNode(.float_literal, float_lit.loc);
+            return parser.ast.addLiteralNode(.float_literal, std.math.nan_u32, float_lit.loc);
         }
         if (parser.match(.true) or parser.match(.false)) {
             const bool_lit = parser.peekPrev();
-            return parser.ast.addLiteralNode(.bool_literal, bool_lit.loc);
+            return parser.ast.addLiteralNode(.bool_literal, std.math.nan_u32, bool_lit.loc);
         }
         if (parser.match(.left_paren)) {
             const left_paren = parser.peekPrev();
@@ -89,7 +91,7 @@ pub const Parser = struct {
                 .end = parser.getNode(node).loc.end,
                 .line = minus.loc.line,
             };
-            return parser.ast.addUnaryNode(.negate, node, loc);
+            return parser.ast.addUnaryNode(.negate, std.math.nan_u32, node, loc);
         }
         if (parser.match(.not)) {
             const not = parser.peekPrev();
@@ -99,7 +101,7 @@ pub const Parser = struct {
                 .end = parser.getNode(node).loc.end,
                 .line = not.loc.line,
             };
-            return parser.ast.addUnaryNode(.bool_not, node, loc);
+            return parser.ast.addUnaryNode(.bool_not, std.math.nan_u32, node, loc);
         }
         return parser.primary();
     }
@@ -110,7 +112,7 @@ pub const Parser = struct {
             const op_token = parser.peekPrev();
             const op_type: Type = if (op_token.type == .star) .mult else .div;
             const right = parser.unary();
-            left = parser.ast.addNode(op_type, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
         }
         return left;
     }
@@ -121,7 +123,7 @@ pub const Parser = struct {
             const op_token = parser.peekPrev();
             const op_type: Type = if (op_token.type == .plus) .add else .sub;
             const right = parser.factor();
-            left = parser.ast.addNode(op_type, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
         }
         return left;
     }
@@ -139,7 +141,7 @@ pub const Parser = struct {
                 else => {},
             }
             const right = parser.term();
-            left = parser.ast.addNode(op_type, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
         }
         return left;
     }
@@ -150,7 +152,7 @@ pub const Parser = struct {
             const op_token = parser.peekPrev();
             const op_type: Type = if (op_token.type == .equal_equal) .equal_equal else .not_equal;
             const right = parser.comparision();
-            left = parser.ast.addNode(op_type, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
         }
         return left;
     }
@@ -161,13 +163,57 @@ pub const Parser = struct {
             const op_token = parser.peekPrev();
             const op_type: Type = if (op_token.type == .amp_amp) .bool_and else .bool_or;
             const right = parser.equality();
-            left = parser.ast.addNode(op_type, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
         }
         return left;
     }
 
     fn expression(parser: *Parser) u32 {
         return parser.logical();
+    }
+
+    //TODO: check if this can be cleaned up
+    fn varStatement(parser: *Parser) u32 {
+        const var_token = parser.consume(); //Consume 'var' token
+        if(!parser.match(.identifier)){
+            std.debug.print("Expected identifier after 'var'", .{});
+        }
+
+        const ident = parser.peekPrev();
+
+        if (!parser.match(.colon)) {
+            std.debug.print("Expected ':' after identifier and before type", .{});
+        }
+
+        const type_token = parser.consume();
+        if(type_token.type != .int_type and type_token.type != .float_type and type_token.type != .bool_type){
+            std.debug.print("Expected type after ':' and before '='", .{});
+        }
+        if(!parser.match(.equal)){
+            std.debug.print("Expected '=' after type and before expression", .{});
+        }
+
+        const expr_node = parser.expression();
+        if(!parser.match(.semi_colon)){
+            std.debug.print("Expected ';' at end of statement", .{});
+        }
+
+        var symbol_type:SymbolType = undefined;
+        switch(type_token.type){
+            .int_type => symbol_type = .t_int,
+            .float_type => symbol_type = .t_float,
+            .bool_type => symbol_type = .t_bool,
+            else => unreachable,
+        }
+
+        const symbol_idx = Symbol.appendVar(.{
+            .name = parser.source[ident.loc.start..ident.loc.end],
+            .type = symbol_type,
+            .expr_node = expr_node
+        });
+
+        const loc: LocInfo = .{.start = var_token.loc.start, .end = parser.peekPrev().loc.end, .line = var_token.loc.line};
+        return parser.ast.addLiteralNode(.var_stmt, symbol_idx, loc);
     }
 
     fn reportError(parser: *Parser, loc: LocInfo, comptime str: []const u8, args: anytype, exit: bool) void {
@@ -328,13 +374,14 @@ pub const Parser = struct {
     }
 
     pub fn parse(parser: *Parser) u32 {
-        const expr = parser.expression();
+        // const expr = parser.expression();
+        const var_s = parser.varStatement();
         if (!parser.match(.eof)) {
             const loc = parser.peek().loc;
             parser.reportError(loc, "Expected end of expression, found '{s}':\n", .{parser.source[loc.start..loc.end]}, true);
         }
-        parser.analyse(expr);
-        _ = parser.analyse_chain_type(expr);
-        return expr;
+        // parser.analyse(expr);
+        // _ = parser.analyse_chain_type(expr);
+        return var_s;//expr;
     }
 };

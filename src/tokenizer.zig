@@ -27,10 +27,16 @@ pub const TokenType = enum {
     lesser,
     left_paren,
     right_paren,
+    colon,
+    semi_colon,
     true,
     false,
     bool,
     identifier,
+    @"var",
+    int_type,
+    float_type,
+    bool_type,
     eof,
 
     pub fn str(token_type: TokenType) []const u8 {
@@ -55,11 +61,31 @@ pub const TokenType = enum {
             .lesser => return "lesser",
             .left_paren => return "left_paren",
             .right_paren => return "right_paren",
+            .colon => return "colon",
+            .semi_colon => return "semi_colon",
             .true => return "true",
             .false => return "false",
             .bool => return "bool",
             .identifier => return "identifier",
+            .@"var" => return "var",
+            .int_type => return "int_type",
+            .float_type => return "float_type",
+            .bool_type => return "bool_type",
             .eof => return "eof",
+        }
+    }
+
+    pub fn reservedStr(token_type: TokenType) []const u8{
+        switch (token_type) {
+            .@"var" => return "var",
+            .int_type => return "int",
+            .float_type => return "float",
+            .bool_type => return "bool",
+            .true => return "true",
+            .false => return "false",
+            else => {
+                return "";
+            },
         }
     }
 };
@@ -115,15 +141,15 @@ pub const Tokenizer = struct {
     }
 
     fn parseIdentifier(tokenizer: *Tokenizer) TokenType {
-        const identifiers = [_]TokenType{ .true, .false };
+        const reserved = [_]TokenType{ .true, .false, .@"var", .int_type, .float_type, .bool_type};
 
         var out_token_type: TokenType = .identifier;
 
         while (tokenizer.current < tokenizer.source.len and std.ascii.isAlphanumeric(tokenizer.peek())) _ = tokenizer.consume();
 
-        for (identifiers, 0..) |token_type, i| {
-            if (std.mem.eql(u8, tokenizer.source[tokenizer.start..tokenizer.current], token_type.str())) {
-                out_token_type = identifiers[i];
+        for (reserved, 0..) |token_type, i| {
+            if (std.mem.eql(u8, tokenizer.source[tokenizer.start..tokenizer.current], token_type.reservedStr())) {
+                out_token_type = reserved[i];
                 break;
             }
         }
@@ -185,6 +211,8 @@ pub const Tokenizer = struct {
                 },
                 '(' => tokenizer.add_token(.left_paren),
                 ')' => tokenizer.add_token(.right_paren),
+                ':' => tokenizer.add_token(.colon),
+                ';' => tokenizer.add_token(.semi_colon),
                 ' ' => {},
                 '\r' => {},
                 '\t' => {},

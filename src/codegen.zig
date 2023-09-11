@@ -2,65 +2,86 @@ const std = @import("std");
 const Ast = @import("ast.zig").Ast;
 const ByteCodePool = @import("bytecode.zig").ByteCodePool;
 const ByteCode = @import("bytecode.zig").ByteCode;
+const Value = @import("bytecode.zig").Value;
+const Symbol = @import("symbol.zig").Symbol;
 
-fn generateCodeFromAst(ast: *Ast, node: u32, source: []u8, pool: *ByteCodePool) void {
-    if (ast.nodes.items[node].left != std.math.nan_u32) {
-        generateCodeFromAst(ast, ast.nodes.items[node].left, source, pool);
+fn generateCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePool) void {
+    if (ast.nodes.items[node_idx].left != std.math.nan_u32) {
+        generateCodeFromAst(ast, ast.nodes.items[node_idx].left, source, pool);
     }
 
-    if (ast.nodes.items[node].right != std.math.nan_u32) {
-        generateCodeFromAst(ast, ast.nodes.items[node].right, source, pool);
+    if (ast.nodes.items[node_idx].right != std.math.nan_u32) {
+        generateCodeFromAst(ast, ast.nodes.items[node_idx].right, source, pool);
     }
 
-    switch (ast.nodes.items[node].type) {
-        .add => pool.emitBytecode(.bc_add),
-        .sub => pool.emitBytecode(.bc_sub),
-        .mult => pool.emitBytecode(.bc_mult),
-        .div => pool.emitBytecode(.bc_div),
+    switch (ast.nodes.items[node_idx].type) {
+        .add => pool.emitBytecodeOp(.op_add),
+        .sub => pool.emitBytecodeOp(.op_sub),
+        .mult => pool.emitBytecodeOp(.op_mult),
+        .div => pool.emitBytecodeOp(.op_div),
         .int_literal => {
             var int: i32 = 0;
-            if (std.fmt.parseInt(i32, source[ast.nodes.items[node].loc.start..ast.nodes.items[node].loc.end], 10)) |out| {
+            if (std.fmt.parseInt(i32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end], 10)) |out| {
                 int = out;
             } else |err| {
                 std.debug.print("Error while parsing int literal: {any}\n", .{err});
             }
-            pool.emitBytecode(.bc_constant);
-            pool.emitBytecode(@as(ByteCode, @enumFromInt(pool.addConstant(.{ .int = int }))));
+            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{.int = int}));
         },
         .float_literal => {
             var float: f32 = 0.0;
-            if (std.fmt.parseFloat(f32, source[ast.nodes.items[node].loc.start..ast.nodes.items[node].loc.end])) |out| {
+            if (std.fmt.parseFloat(f32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end])) |out| {
                 float = out;
             } else |err| {
                 std.debug.print("Error while parsing float literal: {any}\n", .{err});
             }
-            pool.emitBytecode(.bc_constant);
-            pool.emitBytecode(@as(ByteCode, @enumFromInt(pool.addConstant(.{ .float = float }))));
+            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{.float = float}));
         },
         .bool_literal => {
             var boolean: bool = false;
-            if (source[ast.nodes.items[node].loc.start] == 't') {
+            if (source[ast.nodes.items[node_idx].loc.start] == 't') {
                 boolean = true;
             } else {
                 boolean = false;
             }
-            pool.emitBytecode(.bc_constant);
-            pool.emitBytecode(@as(ByteCode, @enumFromInt(pool.addConstant(.{ .boolean = boolean }))));
+            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{.boolean = boolean}));
         },
-        .bool_not => pool.emitBytecode(.bc_not),
-        .bool_and => pool.emitBytecode(.bc_and),
-        .bool_or => pool.emitBytecode(.bc_or),
-        .negate => pool.emitBytecode(.bc_negate),
-        .greater => pool.emitBytecode(.bc_greater),
-        .lesser => pool.emitBytecode(.bc_less),
-        .greater_equal => pool.emitBytecode(.bc_greater_than),
-        .lesser_equal => pool.emitBytecode(.bc_less_than),
-        .equal_equal => pool.emitBytecode(.bc_equal),
-        .not_equal => pool.emitBytecode(.bc_not_equal),
+        .bool_not => pool.emitBytecodeOp(.op_not),
+        .bool_and => pool.emitBytecodeOp(.op_and),
+        .bool_or => pool.emitBytecodeOp(.op_or),
+        .negate => pool.emitBytecodeOp(.op_negate),
+        .greater => pool.emitBytecodeOp(.op_greater),
+        .lesser => pool.emitBytecodeOp(.op_less),
+        .greater_equal => pool.emitBytecodeOp(.op_greater_than),
+        .lesser_equal => pool.emitBytecodeOp(.op_less_than),
+        .equal_equal => pool.emitBytecodeOp(.op_equal),
+        .not_equal => pool.emitBytecodeOp(.op_not_equal),
+        .var_stmt => {
+            const node = ast.nodes.items[node_idx];
+            const symbol_entry = Symbol.varTable.get(node.symbol_idx);
+            generateCodeFromAst(ast, symbol_entry.expr_node, source, pool);
+            var value: Value = undefined;
+            switch(symbol_entry.type){
+                .t_int => {
+                    value = .{.int = 0};
+                },
+                .t_float => {
+                    value = .{.float = 0.0};
+                },
+                .t_bool => {
+                    value = .{.boolean = false};
+                },
+            }
+            
+            pool.global_var_tables.values.put(symbol_entry.name, value) catch |err|{
+                std.debug.print("Unable to create global variable entry: {}", .{err});
+            };
+            pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(symbol_entry.name).?));
+        }
     }
 }
 
 pub fn generateCode(ast: *Ast, node: u32, source: []u8, pool: *ByteCodePool) void {
     generateCodeFromAst(ast, node, source, pool);
-    pool.emitBytecode(.bc_return);
+    // pool.emitBytecodeOp(.op_return);
 }
