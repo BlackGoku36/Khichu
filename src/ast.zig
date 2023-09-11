@@ -19,7 +19,9 @@ pub const Type = enum {
     div,
     add,
     sub,
+    identifier,
     var_stmt,
+    print_stmt,
 
     pub fn strType(ast_type: Type) []const u8 {
         switch (ast_type) {
@@ -51,7 +53,9 @@ pub const Type = enum {
             .div => return "div",
             .add => return "add",
             .sub => return "sub",
+            .identifier => return "identifier",
             .var_stmt => return "var_stmt",
+            .print_stmt => return "print_stmt",
         }
     }
 };

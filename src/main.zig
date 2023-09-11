@@ -33,9 +33,11 @@ pub fn main() !void {
     var parser = Parser.init(allocator, tokenizer);
     defer parser.deinit();
 
-    const node = parser.parse();
+    parser.parse();
     std.debug.print("\n------ AST ------\n", .{});
-    parser.ast.print(node, 0, 0);
+    for (parser.ast_roots.items) |roots| {
+        parser.ast.print(roots, 0, 0);
+    }
 
     std.debug.print("\n------ SYMBOL TABLE (VAR)------\n", .{});
     Symbol.printVar();
@@ -43,9 +45,11 @@ pub fn main() !void {
     var bytecode_pool = ByteCodePool.init(allocator);
     defer bytecode_pool.deinit();
 
-    codegen.generateCode(&parser.ast, node, source, &bytecode_pool);
-    std.debug.print("\n------ BYTECODE ------\n", .{});
-    bytecode_pool.print();
+    for (parser.ast_roots.items) |roots| {
+        codegen.generateCode(&parser.ast, roots, source, &bytecode_pool);
+        std.debug.print("\n------ BYTECODE ------\n", .{});
+        bytecode_pool.print();
+    }
 
     Symbol.destroyTables();
 

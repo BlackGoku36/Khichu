@@ -77,6 +77,12 @@ fn generateCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePo
                 std.debug.print("Unable to create global variable entry: {}", .{err});
             };
             pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(symbol_entry.name).?));
+        },
+        .print_stmt => pool.emitBytecodeOp(.op_print),
+        .identifier => {
+            const name: []u8 = source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end];
+            // TODO: Add check for identifier not declared
+            pool.emitBytecodeAdd(.op_unload_gv, @intCast(pool.global_var_tables.values.getIndex(name).?));
         }
     }
 }

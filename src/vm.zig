@@ -32,12 +32,12 @@ pub const VM = struct {
             const instruction = vm.readInstruction();
             switch (instruction.op_code) {
                 .op_return => {
-                    const value = vm.stack.pop();
-                    switch (value) {
-                        .int => |val| std.debug.print("{d}\n", .{val}),
-                        .float => |val| std.debug.print("{d}\n", .{val}),
-                        .boolean => |val| std.debug.print("{any}\n", .{val}),
-                    }
+                    // const value = vm.stack.pop();
+                    // switch (value) {
+                        // .int => |val| std.debug.print("{d}\n", .{val}),
+                        // .float => |val| std.debug.print("{d}\n", .{val}),
+                        // .boolean => |val| std.debug.print("{any}\n", .{val}),
+                    // }
                     return;
                 },
                 .op_constant => {
@@ -46,8 +46,8 @@ pub const VM = struct {
                 .op_not => {
                     var value = vm.stack.pop();
                     switch (value) {
-                        .int => std.debug.print("Invalid type for bc_not operation\n", .{}),
-                        .float => std.debug.print("Invalid type for bc_not operation\n", .{}),
+                        .int => std.debug.print("Invalid type for op_not operation\n", .{}),
+                        .float => std.debug.print("Invalid type for op_not operation\n", .{}),
                         .boolean => value.boolean = !value.boolean,
                     }
                     try vm.stack.append(value);
@@ -57,7 +57,7 @@ pub const VM = struct {
                     switch (value) {
                         .int => value.int = -value.int,
                         .float => value.float = -value.float,
-                        .boolean => std.debug.print("Invalid type for bc_negate operation\n", .{}),
+                        .boolean => std.debug.print("Invalid type for op_negate operation\n", .{}),
                     }
                     try vm.stack.append(value);
                 },
@@ -67,7 +67,7 @@ pub const VM = struct {
                     switch (a) {
                         .int => a.int += b.int,
                         .float => a.float += b.float,
-                        .boolean => std.debug.print("Invalid type for bc_add operation\n", .{}),
+                        .boolean => std.debug.print("Invalid type for op_add operation\n", .{}),
                     }
                     try vm.stack.append(a);
                 },
@@ -77,7 +77,7 @@ pub const VM = struct {
                     switch (a) {
                         .int => a.int -= b.int,
                         .float => a.float -= b.float,
-                        .boolean => std.debug.print("Invalid type for bc_sub operation\n", .{}),
+                        .boolean => std.debug.print("Invalid type for op_sub operation\n", .{}),
                     }
                     try vm.stack.append(a);
                 },
@@ -87,7 +87,7 @@ pub const VM = struct {
                     switch (a) {
                         .int => a.int *= b.int,
                         .float => a.float *= b.float,
-                        .boolean => std.debug.print("Invalid type for bc_mult operation\n", .{}),
+                        .boolean => std.debug.print("Invalid type for op_mult operation\n", .{}),
                     }
                     try vm.stack.append(a);
                 },
@@ -97,7 +97,7 @@ pub const VM = struct {
                     switch (a) {
                         .int => a.int = @divExact(a.int, b.int),
                         .float => a.float /= b.float,
-                        .boolean => std.debug.print("Invalid type for bc_div operation\n", .{}),
+                        .boolean => std.debug.print("Invalid type for op_div operation\n", .{}),
                     }
                     try vm.stack.append(a);
                 },
@@ -108,7 +108,7 @@ pub const VM = struct {
                     switch (a) {
                         .int => c.boolean = a.int > b.int,
                         .float => c.boolean = a.float > b.float,
-                        .boolean => std.debug.print("Invalid type for bc_greater operation\n", .{}),
+                        .boolean => std.debug.print("Invalid type for op_greater operation\n", .{}),
                     }
                     try vm.stack.append(c);
                 },
@@ -119,7 +119,7 @@ pub const VM = struct {
                     switch (a) {
                         .int => c.boolean = a.int < b.int,
                         .float => c.boolean = a.float < b.float,
-                        .boolean => std.debug.print("Invalid type for bc_less operation\n", .{}),
+                        .boolean => std.debug.print("Invalid type for op_less operation\n", .{}),
                     }
                     try vm.stack.append(c);
                 },
@@ -130,7 +130,7 @@ pub const VM = struct {
                     switch (a) {
                         .int => c.boolean = a.int >= b.int,
                         .float => c.boolean = a.float >= b.float,
-                        .boolean => std.debug.print("Invalid type for bc_greater_than operation\n", .{}),
+                        .boolean => std.debug.print("Invalid type for op_greater_than operation\n", .{}),
                     }
                     try vm.stack.append(c);
                 },
@@ -141,7 +141,7 @@ pub const VM = struct {
                     switch (a) {
                         .int => c.boolean = a.int <= b.int,
                         .float => c.boolean = a.float <= b.float,
-                        .boolean => std.debug.print("Invalid type for bc_less_than operation\n", .{}),
+                        .boolean => std.debug.print("Invalid type for op_less_than operation\n", .{}),
                     }
                     try vm.stack.append(c);
                 },
@@ -171,8 +171,8 @@ pub const VM = struct {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     switch (a) {
-                        .int => std.debug.print("Invalid type for bc_and operation\n", .{}),
-                        .float => std.debug.print("Invalid type for bc_and operation\n", .{}),
+                        .int => std.debug.print("Invalid type for op_and operation\n", .{}),
+                        .float => std.debug.print("Invalid type for op_and operation\n", .{}),
                         .boolean => a.boolean = a.boolean and b.boolean,
                     }
                     try vm.stack.append(a);
@@ -181,8 +181,8 @@ pub const VM = struct {
                     var b = vm.stack.pop();
                     var a = vm.stack.pop();
                     switch (a) {
-                        .int => std.debug.print("Invalid type for bc_or operation\n", .{}),
-                        .float => std.debug.print("Invalid type for bc_or operation\n", .{}),
+                        .int => std.debug.print("Invalid type for op_or operation\n", .{}),
+                        .float => std.debug.print("Invalid type for op_or operation\n", .{}),
                         .boolean => a.boolean = a.boolean or b.boolean,
                     }
                     try vm.stack.append(a);
@@ -194,6 +194,18 @@ pub const VM = struct {
                         std.debug.print("Unable to assign value to variable: {}", .{err});
                     };
                 },
+                .op_unload_gv => {
+                    var value = vm.pool.global_var_tables.values.values()[instruction.address];
+                    try vm.stack.append(value);
+                },
+                .op_print => {
+                    const value = vm.stack.pop();
+                    switch (value) {
+                        .int => |val| std.debug.print("{d}\n", .{val}),
+                        .float => |val| std.debug.print("{d}\n", .{val}),
+                        .boolean => |val| std.debug.print("{any}\n", .{val}),
+                    }
+                }
             }
         }
     }

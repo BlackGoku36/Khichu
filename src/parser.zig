@@ -18,6 +18,7 @@ pub const Parser = struct {
     source: []u8,
     source_name: []const u8,
     token_pool: std.ArrayList(Token),
+    ast_roots: std.ArrayList(u32),
 
     pub fn init(allocator: std.mem.Allocator, _tokenizer: Tokenizer) Parser {
         return .{
@@ -26,11 +27,13 @@ pub const Parser = struct {
             .source = _tokenizer.source,
             .source_name = _tokenizer.source_name,
             .token_pool = _tokenizer.pool,
+            .ast_roots = std.ArrayList(u32).init(allocator),
         };
     }
 
     pub fn deinit(parser: *Parser) void {
         parser.ast.deinit();
+        parser.ast_roots.deinit();
     }
 
     fn getNode(parser: *Parser, index: u32) Node {
@@ -69,6 +72,10 @@ pub const Parser = struct {
         if (parser.match(.true) or parser.match(.false)) {
             const bool_lit = parser.peekPrev();
             return parser.ast.addLiteralNode(.bool_literal, std.math.nan_u32, bool_lit.loc);
+        }
+        if(parser.match(.identifier)){
+            const ident = parser.peekPrev();
+            return parser.ast.addLiteralNode(.identifier, std.math.nan_u32, ident.loc);
         }
         if (parser.match(.left_paren)) {
             const left_paren = parser.peekPrev();
@@ -214,6 +221,22 @@ pub const Parser = struct {
 
         const loc: LocInfo = .{.start = var_token.loc.start, .end = parser.peekPrev().loc.end, .line = var_token.loc.line};
         return parser.ast.addLiteralNode(.var_stmt, symbol_idx, loc);
+    }
+
+    fn printStatement(parser: *Parser) u32 {
+        const print_token = parser.consume();
+        if(!parser.match(.left_paren)){
+            std.debug.print("Expected '(' after 'print'\n", .{});
+        }
+        const expr_node = parser.expression();
+        if(!parser.match(.right_paren)){
+            std.debug.print("Expected ')' after expression\n", .{});
+        }
+        if(!parser.match(.semi_colon)){
+            std.debug.print("Expected ';' at end of statement\n", .{});
+        }
+        const loc: LocInfo = .{.start = print_token.loc.start, .end = parser.peekPrev().loc.end, .line = print_token.loc.line};
+        return parser.ast.addUnaryNode(.print_stmt, std.math.nan_u32, expr_node, loc);
     }
 
     fn reportError(parser: *Parser, loc: LocInfo, comptime str: []const u8, args: anytype, exit: bool) void {
@@ -373,15 +396,24 @@ pub const Parser = struct {
         }
     }
 
-    pub fn parse(parser: *Parser) u32 {
-        // const expr = parser.expression();
-        const var_s = parser.varStatement();
-        if (!parser.match(.eof)) {
-            const loc = parser.peek().loc;
-            parser.reportError(loc, "Expected end of expression, found '{s}':\n", .{parser.source[loc.start..loc.end]}, true);
+    pub fn parse(parser: *Parser) void {
+        while(parser.peek().type != .eof){
+            if(parser.peek().type == .@"var"){
+                parser.ast_roots.append(parser.varStatement()) catch |err|{
+                    std.debug.print("Unable to append var statment ast node to root list: {}", .{err});
+                };
+            }
+            if (parser.peek().type == .print){
+                parser.ast_roots.append(parser.printStatement()) catch |err|{
+                    std.debug.print("Unable to append print statment ast node to root list: {}", .{err});
+                };
+            }
         }
+        // if (!parser.match(.eof)) {
+            // const loc = parser.peek().loc;
+            // parser.reportError(loc, "Expected end of expression, found '{s}':\n", .{parser.source[loc.start..loc.end]}, true);
+        // }
         // parser.analyse(expr);
         // _ = parser.analyse_chain_type(expr);
-        return var_s;//expr;
     }
 };

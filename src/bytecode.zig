@@ -18,6 +18,8 @@ pub const opCode = enum{
     op_and,
     op_or,
     op_load_gv,
+    op_unload_gv,
+    op_print,
 };
 
 pub const ByteCode = struct{
@@ -102,11 +104,11 @@ pub const ByteCodePool = struct {
         while (offset < pool.bytecodes.items.len) {
             switch (pool.bytecodes.items[offset].op_code) {
                 .op_return => {
-                    std.debug.print("bc_return\n", .{});
+                    std.debug.print("op_return\n", .{});
                     offset += 1;
                 },
                 .op_constant => {
-                    std.debug.print("bc_constant: ", .{});
+                    std.debug.print("op_constant: ", .{});
                     var value = pool.values.items[pool.bytecodes.items[offset].address];
                     switch (value) {
                         .int => |val| std.debug.print("{d}\n", .{val}),
@@ -116,65 +118,73 @@ pub const ByteCodePool = struct {
                     offset += 1;
                 },
                 .op_negate => {
-                    std.debug.print("bc_negate\n", .{});
+                    std.debug.print("op_negate\n", .{});
                     offset += 1;
                 },
                 .op_add => {
-                    std.debug.print("bc_add\n", .{});
+                    std.debug.print("op_add\n", .{});
                     offset += 1;
                 },
                 .op_sub => {
-                    std.debug.print("bc_sub\n", .{});
+                    std.debug.print("op_sub\n", .{});
                     offset += 1;
                 },
                 .op_mult => {
-                    std.debug.print("bc_mult\n", .{});
+                    std.debug.print("op_mult\n", .{});
                     offset += 1;
                 },
                 .op_div => {
-                    std.debug.print("bc_div\n", .{});
+                    std.debug.print("op_div\n", .{});
                     offset += 1;
                 },
                 .op_greater => {
-                    std.debug.print("bc_greater\n", .{});
+                    std.debug.print("op_greater\n", .{});
                     offset += 1;
                 },
                 .op_less => {
-                    std.debug.print("bc_less\n", .{});
+                    std.debug.print("op_less\n", .{});
                     offset += 1;
                 },
                 .op_greater_than => {
-                    std.debug.print("bc_greater_than\n", .{});
+                    std.debug.print("op_greater_than\n", .{});
                     offset += 1;
                 },
                 .op_less_than => {
-                    std.debug.print("bc_less_than\n", .{});
+                    std.debug.print("op_less_than\n", .{});
                     offset += 1;
                 },
                 .op_equal => {
-                    std.debug.print("bc_equal\n", .{});
+                    std.debug.print("op_equal\n", .{});
                     offset += 1;
                 },
                 .op_not_equal => {
-                    std.debug.print("bc_not_equal\n", .{});
+                    std.debug.print("op_not_equal\n", .{});
                     offset += 1;
                 },
                 .op_not => {
-                    std.debug.print("bc_not\n", .{});
+                    std.debug.print("op_not\n", .{});
                     offset += 1;
                 },
                 .op_and => {
-                    std.debug.print("bc_and\n", .{});
+                    std.debug.print("op_and\n", .{});
                     offset += 1;
                 },
                 .op_or => {
-                    std.debug.print("bc_or\n", .{});
+                    std.debug.print("op_or\n", .{});
                     offset += 1;
                 },
                 .op_load_gv => {
-                    std.debug.print("bc_load_gv: {d}\n", .{pool.bytecodes.items[offset].address});
+                    std.debug.print("op_load_gv: {d}\n", .{pool.bytecodes.items[offset].address});
                     offset += 1;
                 },
+                .op_unload_gv => {
+                    std.debug.print("op_unload_gv: {d}\n", .{pool.bytecodes.items[offset].address});
+                    offset += 1;
+                },
+                .op_print => {
+                    std.debug.print("op_print\n", .{});
+                    offset += 1;
+                }
             }
         }
     }
