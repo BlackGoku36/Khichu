@@ -176,21 +176,21 @@ pub const Parser = struct {
     }
 
     fn assignment(parser: *Parser) u32 {
-        const ident_node = parser.logical();
-        const ident_token = parser.token_pool.items[ident_node];
+        const ident_idx = parser.logical();
+        const ident_node = parser.ast.nodes.items[ident_idx];
         if(parser.match(.equal)){
-            if(ident_token.type != .identifier){
-                parser.reportError(ident_token.loc, "Expected identifier before '=', found '{s}'.\n", .{ ident_token.type.str()}, true);
+            if(ident_node.type != .identifier){
+                parser.reportError(ident_node.loc, "Expected identifier before '=', found '{s}'.\n", .{ ident_node.type.str()}, true);
             }
             const expr_node = parser.assignment();
             const loc: LocInfo = .{
-                .start = ident_token.loc.start, 
+                .start = ident_node.loc.start, 
                 .end = parser.peekPrev().loc.end, 
-                .line = ident_token.loc.line
+                .line = ident_node.loc.line
             };
-            return parser.ast.addNode(.assign_stmt, std.math.nan_u32, ident_node, expr_node, loc);
+            return parser.ast.addNode(.assign_stmt, std.math.nan_u32, ident_idx, expr_node, loc);
         }
-        return ident_node;
+        return ident_idx;
     }
 
     fn expression(parser: *Parser) u32 {
