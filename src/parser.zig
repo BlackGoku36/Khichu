@@ -177,15 +177,16 @@ pub const Parser = struct {
 
     fn assignment(parser: *Parser) u32 {
         const ident_node = parser.logical();
+        const ident_token = parser.token_pool.items[ident_node];
         if(parser.match(.equal)){
-            if(parser.token_pool.items[ident_node].type != .identifier){
-                std.debug.print("Expected identifier before '='\n", .{});
+            if(ident_token.type != .identifier){
+                parser.reportError(ident_token.loc, "Expected identifier before '=', found '{s}'.\n", .{ ident_token.type.str()}, true);
             }
             const expr_node = parser.assignment();
             const loc: LocInfo = .{
-                .start = parser.token_pool.items[ident_node].loc.start, 
+                .start = ident_token.loc.start, 
                 .end = parser.peekPrev().loc.end, 
-                .line = parser.token_pool.items[ident_node].loc.line
+                .line = ident_token.loc.line
             };
             return parser.ast.addNode(.assign_stmt, std.math.nan_u32, ident_node, expr_node, loc);
         }
@@ -199,7 +200,7 @@ pub const Parser = struct {
     fn expressionStatement(parser: *Parser) u32 {
         const expr = parser.expression();
         if(!parser.match(.semi_colon)){
-            std.debug.print("Expected ';' after expression\n", .{});
+            parser.reportError(parser.peekPrev().loc, "Expected ';' after expression, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
         return expr;
     }
@@ -208,27 +209,24 @@ pub const Parser = struct {
     fn varStatement(parser: *Parser) u32 {
         const var_token = parser.consume(); //Consume 'var' token
         if(!parser.match(.identifier)){
-            std.debug.print("Expected identifier after 'var'", .{});
+            parser.reportError(var_token.loc, "Expected identifier after 'var', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
 
         const ident = parser.peekPrev();
 
         if (!parser.match(.colon)) {
-            std.debug.print("Expected ':' after identifier and before type", .{});
+            parser.reportError(parser.peekPrev().loc, "Expected ':' after 'identifier' and before type, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
 
         const type_token = parser.consume();
         if(type_token.type != .int_type and type_token.type != .float_type and type_token.type != .bool_type){
-            std.debug.print("Expected type after ':' and before '='", .{});
+            parser.reportError(type_token.loc, "Expected type after ':' and before '=', found '{s}'.\n", .{ type_token.type.str()}, true);
         }
         if(!parser.match(.equal)){
-            std.debug.print("Expected '=' after type and before expression", .{});
+            parser.reportError(parser.peekPrev().loc, "Expected '=' after type and before expression, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
 
-        const expr_node = parser.expression();
-        if(!parser.match(.semi_colon)){
-            std.debug.print("Expected ';' at end of statement", .{});
-        }
+        const expr_node = parser.expressionStatement();
 
         var symbol_type:SymbolType = undefined;
         switch(type_token.type){
@@ -251,14 +249,14 @@ pub const Parser = struct {
     fn printStatement(parser: *Parser) u32 {
         const print_token = parser.consume();
         if(!parser.match(.left_paren)){
-            std.debug.print("Expected '(' after 'print'\n", .{});
+            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
         const expr_node = parser.expression();
         if(!parser.match(.right_paren)){
-            std.debug.print("Expected ')' after expression\n", .{});
+            parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
         if(!parser.match(.semi_colon)){
-            std.debug.print("Expected ';' at end of statement\n", .{});
+            parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
         const loc: LocInfo = .{.start = print_token.loc.start, .end = parser.peekPrev().loc.end, .line = print_token.loc.line};
         return parser.ast.addUnaryNode(.print_stmt, std.math.nan_u32, expr_node, loc);
