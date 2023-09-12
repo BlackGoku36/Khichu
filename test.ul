@@ -7,3 +7,6 @@ x = y * x;
 print(x);
 print(x = 2.0);
 print(x);
+var z: bool = false;
+var a: bool = x < y;
+print(z && a);
