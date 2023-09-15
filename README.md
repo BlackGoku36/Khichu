@@ -11,6 +11,12 @@
 - Add backend for WASM.
 - Find some way to collect as many as errors possible before quitting.
 - Allow 'var x = 5;', that is allow type inference.
+- What should be better error message?
+```
+test.ul:0: Expected ';' after 'expression', found 'identifier'.
+x: float = 8.2 + 2.1 / 3.8;
+^--------------------------
+```
 
 # WASM
 - [Part-1](https://coinexsmartchain.medium.com/wasm-introduction-part-1-binary-format-57895d851580)

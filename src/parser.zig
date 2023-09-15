@@ -180,7 +180,7 @@ pub const Parser = struct {
         const ident_node = parser.ast.nodes.items[ident_idx];
         if(parser.match(.equal)){
             if(ident_node.type != .identifier){
-                parser.reportError(ident_node.loc, "Expected identifier before '=', found '{s}'.\n", .{ ident_node.type.str()}, true);
+                parser.reportError(ident_node.loc, "Expected 'identifier' before '=', found '{s}'.\n", .{ ident_node.type.str()}, true);
             }
             const expr_node = parser.assignment();
             const loc: LocInfo = .{
@@ -200,7 +200,7 @@ pub const Parser = struct {
     fn expressionStatement(parser: *Parser) u32 {
         const expr = parser.expression();
         if(!parser.match(.semi_colon)){
-            parser.reportError(parser.peekPrev().loc, "Expected ';' after expression, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+            parser.reportError(parser.peekPrev().loc, "Expected ';' after 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
         return expr;
     }
@@ -215,15 +215,16 @@ pub const Parser = struct {
         const ident = parser.peekPrev();
 
         if (!parser.match(.colon)) {
-            parser.reportError(parser.peekPrev().loc, "Expected ':' after 'identifier' and before type, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+            parser.reportError(parser.peekPrev().loc, "Expected ':' after 'identifier' and before 'type', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
 
         const type_token = parser.consume();
         if(type_token.type != .int_type and type_token.type != .float_type and type_token.type != .bool_type){
-            parser.reportError(type_token.loc, "Expected type after ':' and before '=', found '{s}'.\n", .{ type_token.type.str()}, true);
+            parser.reportError(type_token.loc, "Expected 'type' after ':' and before '=', found '{s}'.\n", .{ type_token.type.str()}, true);
         }
+
         if(!parser.match(.equal)){
-            parser.reportError(parser.peekPrev().loc, "Expected '=' after type and before expression, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+            parser.reportError(parser.peekPrev().loc, "Expected '=' after 'type' and before 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
 
         const expr_node = parser.expressionStatement();
