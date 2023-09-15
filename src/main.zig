@@ -27,6 +27,7 @@ pub fn main() !void {
     tokenizer.tokenize();
     std.debug.print("\n------ TOKENS ------\n", .{});
     tokenizer.print();
+    std.debug.print("\n", .{});
 
     Symbol.createTables(allocator);
 

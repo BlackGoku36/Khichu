@@ -6,7 +6,6 @@
 - Disallow variable shadowing
 - Check if code-gen for assignment statement/expression is good or not.
 - Add and check var decal. and assignment for other types.
-- Add back semantic analyzer.
 - Turn current VM to register base.
 - Add backend for WASM.
 - Find some way to collect as many as errors possible before quitting.
@@ -17,6 +16,9 @@ test.ul:0: Expected ';' after 'expression', found 'identifier'.
 x: float = 8.2 + 2.1 / 3.8;
 ^--------------------------
 ```
+
+## FUTURE TODO
+- Suggest related variable names, for example, programmer uses `x_ids` but only `x_idx` exist, so it will suggest `x_idx`.
 
 # WASM
 - [Part-1](https://coinexsmartchain.medium.com/wasm-introduction-part-1-binary-format-57895d851580)

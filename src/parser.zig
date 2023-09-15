@@ -422,27 +422,46 @@ pub const Parser = struct {
 
     pub fn parse(parser: *Parser) void {
         while(parser.peek().type != .eof){
-            if(parser.peek().type == .@"var"){
-                parser.ast_roots.append(parser.varStatement()) catch |err|{
-                    std.debug.print("Unable to append var statment ast node to root list: {}", .{err});
-                };
-            }
-            else if (parser.peek().type == .print){
-                parser.ast_roots.append(parser.printStatement()) catch |err|{
-                    std.debug.print("Unable to append print statment ast node to root list: {}", .{err});
-                };
-            }
-            else {
+            switch (parser.peek().type) {
+                .@"var" => {
+                    parser.ast_roots.append(parser.varStatement()) catch |err|{
+                        std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
+                    };
+                },
+                .print => {
+                    parser.ast_roots.append(parser.printStatement()) catch |err|{
+                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
+                    };
+                },
+                else => {
                     parser.ast_roots.append(parser.expressionStatement()) catch |err|{
-                    std.debug.print("Unable to append expression statment ast node to root list: {}", .{err});
-                };
+                        std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
+                    };
+                }
             }
         }
-        // if (!parser.match(.eof)) {
-            // const loc = parser.peek().loc;
-            // parser.reportError(loc, "Expected end of expression, found '{s}':\n", .{parser.source[loc.start..loc.end]}, true);
-        // }
-        // parser.analyse(expr);
-        // _ = parser.analyse_chain_type(expr);
+        // Analyze
+        for (parser.ast_roots.items) |root_idx| {
+            const ast_node = parser.ast.nodes.items[root_idx];
+            switch(ast_node.type){
+                .var_stmt => {
+                    const symbol_idx = ast_node.symbol_idx;
+                    const symbol_entry = Symbol.varTable.get(symbol_idx);
+                    parser.analyse(symbol_entry.expr_node);
+                    _ = parser.analyse_chain_type(symbol_entry.expr_node);
+                },
+                .print_stmt => {
+                    const left_idx = ast_node.left;
+                    parser.analyse(left_idx);
+                    _ = parser.analyse_chain_type(left_idx);
+                },
+                .assign_stmt => {
+                    const right_idx = ast_node.right;
+                    parser.analyse(right_idx);
+                    _ = parser.analyse_chain_type(right_idx);
+                },
+                else => {}
+            }
+        }
     }
 };
