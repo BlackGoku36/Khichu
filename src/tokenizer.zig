@@ -186,7 +186,12 @@ pub const Tokenizer = struct {
                     tokenizer.add_token(.star);
                 },
                 '/' => {
-                    tokenizer.add_token(.slash);
+                    if(tokenizer.match('/')){
+                        while(tokenizer.current < tokenizer.source.len and tokenizer.consume() != '\n'){}
+                        tokenizer.line += 1;
+                    }else{
+                        tokenizer.add_token(.slash);
+                    }
                 },
                 '=' => {
                     const token_type: TokenType = if (tokenizer.match('=')) .equal_equal else .equal;

@@ -12,6 +12,15 @@
 - Find some way to collect as many as errors possible before quitting.
 - Allow 'var x = 5;', that is allow type inference.
 
+# WASM
+- [Part-1](https://coinexsmartchain.medium.com/wasm-introduction-part-1-binary-format-57895d851580)
+- [Part-2](https://coinexsmartchain.medium.com/wasm-introduction-part-2-instruction-set-operand-stack-38e5171b52e6)
+- [Part-3](https://coinexsmartchain.medium.com/wasm-introduction-part-3-memory-7426f19c9624)
+- [Part-4](https://coinexsmartchain.medium.com/wasm-introduction-part-4-function-call-9ddf62272f15)
+- [Part-5](https://coinexsmartchain.medium.com/wasm-introduction-part-5-control-instructions-1cc21a180618)
+- [Part-6](https://coinexsmartchain.medium.com/wasm-introduction-part-6-table-indirect-call-65ad0404b003)
+- [Part-7](https://coinexsmartchain.medium.com/wasm-introduction-part-7-text-format-2d608e50daab)
+
 ## Compile and Run
 
 Write the code in `test.ul` and do:
