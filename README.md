@@ -3,13 +3,15 @@
 ## TODO
 
 - Add some tests running facility
-- Disallow variable shadowing
 - Check if code-gen for assignment statement/expression is good or not.
-- Add and check var decal. and assignment for other types.
 - Turn current VM to register base.
 - Add backend for WASM.
 - Find some way to collect as many as errors possible before quitting.
 - Allow 'var x = 5;', that is allow type inference.
+- Analyzer
+    - Check if the identifier used already exists or not.
+    - Disallow variable shadowing.
+    - Disallow changing type on assignment to same variable (if var is float, then it is legal right now to assign bool to it, but it should be illegal).
 - What should be better error message?
 ```
 test.ul:0: Expected ';' after 'expression', found 'identifier'.
