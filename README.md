@@ -15,6 +15,10 @@
         - Maybe do this in semantic analyzer?
     - Disallow variable shadowing.
     - Disallow changing type on assignment to same variable (if var is float, then it is legal right now to assign bool to it, but it should be illegal).
+- Minor refactor:
+    - Separate analyzer from parser file.
+    - Put current code-gen and vm into it own folder.
+    - Create new folder for wasm codegen.
 - What should be better error message?
 ```
 test.ul:0: Expected ';' after 'expression', found 'identifier'.
