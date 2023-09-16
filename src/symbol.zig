@@ -41,6 +41,14 @@ pub const Symbol = struct {
         return varTable.len - 1;
     }
 
+    pub fn exists(name: []u8) bool{
+        var exist:bool = false;
+        for(varTable.items(.name)) |var_name|{
+            if(std.mem.eql(u8, name, var_name)) exist = true;
+        }
+        return exist;
+    }
+
     pub fn printVar() void {
         for (varTable.items(.name), varTable.items(.type), varTable.items(.expr_node)) |name, var_type, expr_node| {
             std.debug.print("{s}, {s}, {d}\n", .{name, var_type.str(), expr_node});

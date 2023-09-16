@@ -10,6 +10,9 @@
 - Allow 'var x = 5;', that is allow type inference.
 - Analyzer
     - Check if the identifier used already exists or not.
+        - Turn symbol table into hashmap.
+        - While reporting error, show where previous identifier is declared.
+        - Maybe do this in semantic analyzer?
     - Disallow variable shadowing.
     - Disallow changing type on assignment to same variable (if var is float, then it is legal right now to assign bool to it, but it should be illegal).
 - What should be better error message?

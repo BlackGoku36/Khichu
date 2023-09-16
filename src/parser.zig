@@ -214,6 +214,11 @@ pub const Parser = struct {
 
         const ident = parser.peekPrev();
 
+        const var_exist = Symbol.exists(parser.source[ident.loc.start..ident.loc.end]);
+        if(var_exist){
+            parser.reportError(ident.loc, "Variable named '{s}' already exists.\n", .{parser.source[ident.loc.start..ident.loc.end]}, true);
+        }
+
         if (!parser.match(.colon)) {
             parser.reportError(parser.peekPrev().loc, "Expected ':' after 'identifier' and before 'type', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
@@ -264,7 +269,7 @@ pub const Parser = struct {
     }
 
     fn reportError(parser: *Parser, loc: LocInfo, comptime str: []const u8, args: anytype, exit: bool) void {
-        std.debug.print("{s}:{d}: ", .{ parser.source_name, loc.line });
+        std.debug.print("{s}:{d}: ", .{ parser.source_name, loc.line + 1});
         std.debug.print(str, args);
 
         var error_line_offset: u32 = 0;
