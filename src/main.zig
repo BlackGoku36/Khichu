@@ -6,11 +6,14 @@ const codegen = @import("codegen.zig");
 const VM = @import("vm.zig").VM;
 const Symbol = @import("symbol.zig").Symbol;
 
+const wasm_codegen = @import("wasm/codegen.zig");
+
 var gp = std.heap.GeneralPurposeAllocator(.{}){};
 
 pub fn main() !void {
     var allocator = gp.allocator();
     defer _ = gp.deinit();
+
 
     var source_name = "test.ul";
 
@@ -42,24 +45,29 @@ pub fn main() !void {
 
     std.debug.print("\n------ SYMBOL TABLE (VAR)------\n", .{});
     Symbol.printVar();
+    
+    var out_file = try std.fs.cwd().createFile("out.wasm", .{});
+    defer out_file.close();
 
-    var bytecode_pool = ByteCodePool.init(allocator);
-    defer bytecode_pool.deinit();
+    try wasm_codegen.outputFile(out_file, &parser, source, allocator);
 
-    for (parser.ast_roots.items) |roots| {
-        codegen.generateCode(&parser.ast, roots, source, &bytecode_pool);
-    }
-
-    std.debug.print("\n------ BYTECODE ------\n", .{});
-    bytecode_pool.print();
-
+//    var bytecode_pool = ByteCodePool.init(allocator);
+//    defer bytecode_pool.deinit();
+//
+//    for (parser.ast_roots.items) |roots| {
+//        codegen.generateCode(&parser.ast, roots, source, &bytecode_pool);
+//    }
+//
+//    std.debug.print("\n------ BYTECODE ------\n", .{});
+//    bytecode_pool.print();
+//
     Symbol.destroyTables();
-
-    var vm = VM.init(allocator, bytecode_pool);
-    defer vm.deinit();
-    std.debug.print("\n------ VM ------\n", .{});
-    try vm.run();
-
-    std.debug.print("\n------ GLOBAL VAR TABLE ------\n", .{});
-    bytecode_pool.global_var_tables.print();
+//
+//    var vm = VM.init(allocator, bytecode_pool);
+//    defer vm.deinit();
+//    std.debug.print("\n------ VM ------\n", .{});
+//    try vm.run();
+//
+//    std.debug.print("\n------ GLOBAL VAR TABLE ------\n", .{});
+//    bytecode_pool.global_var_tables.print();
 }
