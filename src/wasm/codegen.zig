@@ -16,6 +16,7 @@ const Code = wasm.Code;
 const Local = wasm.Local;
 const Inst = wasm.Inst;
 const ValueType = wasm.ValueType;
+const OpCode = wasm.OpCode;
 
 pub const VariableValueType = enum { int, float, boolean };
 pub const VariableValue = union(VariableValueType) {
@@ -28,10 +29,10 @@ pub const Variable = struct{
     value: VariableValue
 };
 
-pub const GlobalVarTables = struct{
+pub const VarTable = struct{
     variables: std.ArrayList(Variable),
 
-    pub fn init(allocator: std.mem.Allocator) GlobalVarTables {
+    pub fn init(allocator: std.mem.Allocator) VarTable {
         return .{
             .variables = std.ArrayList(Variable).init(allocator),
         };
@@ -49,16 +50,16 @@ pub const GlobalVarTables = struct{
  //       }
  //   }
 
-    pub fn add(gv_table: *GlobalVarTables, identifier: []u8, value: VariableValue) !usize {
+    pub fn add(gv_table: *VarTable, identifier: []u8, value: VariableValue) !usize {
         try gv_table.variables.append(.{.identifier = identifier, .value = value});
         return gv_table.variables.items.len - 1;
     }
 
-    pub fn get(gv_table: *GlobalVarTables, index: u32) Variable {
+    pub fn get(gv_table: *VarTable, index: u32) Variable {
         return gv_table.variables[index];
     }
 
-    pub fn getByName(gv_table: *GlobalVarTables, identifier: []u8) usize {
+    pub fn getByName(gv_table: *VarTable, identifier: []u8) usize {
         for (gv_table.variables.items, 0..) |variable, i| {
             if(std.mem.eql(u8, variable.identifier, identifier)){
                 return i;
@@ -68,7 +69,7 @@ pub const GlobalVarTables = struct{
         //return gv_table.variables[index];
     }
 
-    pub fn deinit(gv_table: *GlobalVarTables) void {
+    pub fn deinit(gv_table: *VarTable) void {
         gv_table.variables.deinit();
     }
 };
@@ -89,12 +90,12 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     };
     defer sectionType.func_type.deinit();
     try sectionType.func_type.append(.{
-       .params = std.ArrayList(ValueType).init(allocator),
-       .results = std.ArrayList(ValueType).init(allocator)
+       .params = std.ArrayList(u8).init(allocator),
+       .results = std.ArrayList(u8).init(allocator)
     });
     try sectionType.func_type.append(.{
-       .params = std.ArrayList(ValueType).init(allocator),
-       .results = std.ArrayList(ValueType).init(allocator)
+       .params = std.ArrayList(u8).init(allocator),
+       .results = std.ArrayList(u8).init(allocator)
     });
     defer {
         for(sectionType.func_type.items) |sec| {
@@ -177,7 +178,7 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     try function_code_body_byte.append(@intCast(code.locals.items.len));
     for(code.locals.items) |local| {
         try function_code_body_byte.append(@intCast(local.locals));
-        try function_code_body_byte.append(local.locals_type);
+        try function_code_body_byte.append(@intFromEnum(local.locals_type));
     }
 
     for(code.instructions.items) |inst| {
@@ -198,14 +199,15 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
 
 fn generateWASM(parser: *Parser, source: []u8, allocator: std.mem.Allocator) !Code {
 
-    var gv = GlobalVarTables.init(allocator);
-    defer gv.deinit();
+    // Local Variables table
+    var lv = VarTable.init(allocator);
+    defer lv.deinit();
 
     var bytecode: std.ArrayList(Inst) = std.ArrayList(Inst).init(allocator);
     var locals: std.ArrayList(Local) = std.ArrayList(Local).init(allocator);
 
     for (parser.ast_roots.items) |roots| {
-        try generateWASMCode(&parser.ast, roots, source, &bytecode, &locals, &gv);
+        try generateWASMCode(&parser.ast, roots, source, &bytecode, &locals, &lv);
     }
 
     try bytecode.append(0x0B);
@@ -218,21 +220,21 @@ fn generateWASM(parser: *Parser, source: []u8, allocator: std.mem.Allocator) !Co
     return code;
 }
 
-fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.ArrayList(Inst), gv: *GlobalVarTables) !void {
+fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.ArrayList(Inst), lv: *VarTable) !void {
 
     if (ast.nodes.items[node_idx].left != std.math.nan_u32) {
-        try generateWASMCodeFromAst(ast, ast.nodes.items[node_idx].left, source, bytecode, gv);
+        try generateWASMCodeFromAst(ast, ast.nodes.items[node_idx].left, source, bytecode, lv);
     }
 
     if (ast.nodes.items[node_idx].right != std.math.nan_u32) {
-        try generateWASMCodeFromAst(ast, ast.nodes.items[node_idx].right, source, bytecode, gv);
+        try generateWASMCodeFromAst(ast, ast.nodes.items[node_idx].right, source, bytecode, lv);
     }
 
     switch (ast.nodes.items[node_idx].type) {
-        .add => try bytecode.append(0x6A),
-        .sub => try bytecode.append(0x6B),
-        .mult => try bytecode.append(0x6C),
-        .div => try bytecode.append(0x6D), // What is the difference between div_s and div_u?
+        .add => try bytecode.append(@intFromEnum(OpCode.i32_add)),
+        .sub => try bytecode.append(@intFromEnum(OpCode.i32_sub)),
+        .mult => try bytecode.append(@intFromEnum(OpCode.i32_mult)),
+        .div => try bytecode.append(@intFromEnum(OpCode.i32_div_s)), // What is the difference between div_s and div_u?
         .int_literal => {
             var int: i32 = 0;
             if (std.fmt.parseInt(i32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end], 10)) |out| {
@@ -240,9 +242,8 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             } else |err| {
                 std.debug.print("Error while parsing int literal: {any}\n", .{err});
             }
-            try bytecode.append(0x41);
+            try bytecode.append(@intFromEnum(OpCode.i32_const));
             try bytecode.append(@intCast(int));
-            //pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{.int = int}));
         },
 //        .float_literal => {
 //            var float: f32 = 0.0;
@@ -274,26 +275,24 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
 //        .not_equal => pool.emitBytecodeOp(.op_not_equal),
         .identifier => {
             const name: []u8 = source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end];
-            try bytecode.append(0x20);
-            try bytecode.append(@intCast(gv.getByName(name)));
+            try bytecode.append(@intFromEnum(OpCode.local_get));
+            try bytecode.append(@intCast(lv.getByName(name)));
             // TODO: Add check for identifier not declared
-            //pool.emitBytecodeAdd(.op_unload_gv, @intCast(pool.global_var_tables.values.getIndex(name).?));
         },
         .assign_stmt => {
             const left = ast.nodes.items[node_idx].left;
             const right = ast.nodes.items[node_idx].right;
-            try generateWASMCodeFromAst(ast, right, source, bytecode, gv);
+            try generateWASMCodeFromAst(ast, right, source, bytecode, lv);
             const name: []u8 = source[ast.nodes.items[left].loc.start..ast.nodes.items[left].loc.end];
             // TODO: Add check for identifier not declared
-            //pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(name).?));
-            try bytecode.append(0x21);
-            try bytecode.append(@intCast(gv.getByName(name)));
+            try bytecode.append(@intFromEnum(OpCode.local_set));
+            try bytecode.append(@intCast(lv.getByName(name)));
         },
         else => {},
     }
 }
 
-pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.ArrayList(Inst), locals: *std.ArrayList(Local), gv: *GlobalVarTables) !void {
+pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.ArrayList(Inst), locals: *std.ArrayList(Local), lv: *VarTable) !void {
     // generateCodeFromAst(ast, node, source, pool);
     // pool.emitBytecodeOp(.op_return);
 
@@ -301,7 +300,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
         .var_stmt => {
             const node = ast.nodes.items[node_idx];
             const symbol_entry = Symbol.varTable.get(node.symbol_idx);
-            try generateWASMCodeFromAst(ast, symbol_entry.expr_node, source, bytecode, gv);
+            try generateWASMCodeFromAst(ast, symbol_entry.expr_node, source, bytecode, lv);
             var value: VariableValue = undefined;
             switch(symbol_entry.type){
                 .t_int => {
@@ -314,37 +313,27 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
                     value = .{.boolean = false};
                 },
             }
-           // pool.global_var_tables.values.put(symbol_entry.name, value) catch |err|{
-           //     std.debug.print("Unable to create global variable entry: {}", .{err});
-           // };
+            var index = try lv.add(symbol_entry.name, value);
 
-            var index = try gv.add(symbol_entry.name, value);
+            try locals.append(.{.locals = 1, .locals_type = ValueType.i32});
 
-            try locals.append(.{.locals = 1, .locals_type = 0x7f});
-
-//            try bytecode.append(0x41);
-//            try bytecode.append(@intCast(value.int));
-            try bytecode.append(0x21);
+            try bytecode.append(@intFromEnum(OpCode.local_set));
             try bytecode.append(@intCast(index));
-
-            //pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(symbol_entry.name).?));
         },
         .print_stmt => {
             const left = ast.nodes.items[node_idx].left;
-            try generateWASMCodeFromAst(ast, left, source, bytecode, gv);
-            try bytecode.append(0x10);
+            try generateWASMCodeFromAst(ast, left, source, bytecode, lv);
+            try bytecode.append(@intFromEnum(OpCode.call));
             try bytecode.append(0x00);
-            //pool.emitBytecodeOp(.op_print);
         },
         .assign_stmt => {
             const left = ast.nodes.items[node_idx].left;
             const right = ast.nodes.items[node_idx].right;
-            try generateWASMCodeFromAst(ast, right, source, bytecode, gv);
+            try generateWASMCodeFromAst(ast, right, source, bytecode, lv);
             const name: []u8 = source[ast.nodes.items[left].loc.start..ast.nodes.items[left].loc.end];
             // TODO: Add check for identifier not declared
-            //pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(name).?));
-            try bytecode.append(0x21);
-            try bytecode.append(@intCast(gv.getByName(name)));
+            try bytecode.append(@intFromEnum(OpCode.local_set));
+            try bytecode.append(@intCast(lv.getByName(name)));
         },
         else => {}
     }

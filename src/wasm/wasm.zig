@@ -26,12 +26,17 @@ pub const SectionType = struct{
     func_type: std.ArrayList(FunctionType)// leb128 len + content
 };
 
-pub const ValueType = u8; // i32 = 0x7F, i64 = 0x7E, f32 = 0x7D, f64 = 0x7C
-
+// https://webassembly.github.io/spec/core/binary/types.html#number-types
+pub const ValueType = enum(u8){
+    i32 = 0x7F,
+    i64 = 0x7E,
+    f32 = 0x7D,
+    f64 = 0x7C
+};
 pub const FunctionType = struct{
     id: u8 = 0x60,
-    params: std.ArrayList(ValueType), // leb128 size + content
-    results: std.ArrayList(ValueType)// leb128 size + content
+    params: std.ArrayList(u8), // leb128 size + content
+    results: std.ArrayList(u8)// leb128 size + content
 };
 
 pub const FunctionSection = struct{
@@ -72,4 +77,31 @@ pub const Local = struct{
     locals_type: ValueType
 };
 
+// https://webassembly.github.io/spec/core/binary/instructions.html
 pub const Inst = u8;
+pub const OpCode = enum(u8){
+    // Control Instruction
+    call = 0x10,
+    // Variable Instruction
+    local_get = 0x20,
+    local_set = 0x21,
+    local_tee = 0x22,
+    global_get = 0x23,
+    global_set = 0x24,
+    // Numeric Instruction
+    i32_const = 0x41,
+    i64_const = 0x42,
+    f32_const = 0x43,
+    f64_const = 0x44,
+    i32_add = 0x6A,
+    i32_sub = 0x6B,
+    i32_mult = 0x6C,
+    i32_div_s = 0x6D,
+    i32_div_u = 0x6E,
+    i32_and = 0x71,
+    i32_or = 0x72,
+    i32_xor = 0x73,
+    i32_shl = 0x74,
+    i32_shr_s = 0x75,
+    i32_shr_u = 0x76
+};
