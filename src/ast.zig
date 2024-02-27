@@ -95,20 +95,20 @@ pub const Ast = struct {
         ast.nodes.deinit();
     }
 
-    pub fn addNode(ast: *Ast, expr_type: Type, symbol_idx: usize, left: u32, right: u32, loc: LocInfo) u32 {
+    pub fn addNode(ast: *Ast, node_type: Type, symbol_idx: usize, left: u32, right: u32, loc: LocInfo) u32 {
         const idx: u32 = @as(u32, @intCast(ast.nodes.items.len));
-        ast.nodes.append(.{ .type = expr_type, .symbol_idx = symbol_idx, .left = left, .right = right, .loc = loc }) catch |err| {
+        ast.nodes.append(.{ .type = node_type, .symbol_idx = symbol_idx, .left = left, .right = right, .loc = loc }) catch |err| {
             std.debug.print("Error while adding node: {any}", .{err});
         };
         return idx;
     }
 
-    pub fn addUnaryNode(ast: *Ast, expr_type: Type, symbol_idx:usize, left: u32, loc: LocInfo) u32 {
-        return ast.addNode(expr_type, symbol_idx, left, std.math.nan_u32, loc);
+    pub fn addUnaryNode(ast: *Ast, node_type: Type, symbol_idx:usize, left: u32, loc: LocInfo) u32 {
+        return ast.addNode(node_type, symbol_idx, left, std.math.nan_u32, loc);
     }
 
-    pub fn addLiteralNode(ast: *Ast, expr_type: Type, symbol_idx: usize, loc: LocInfo) u32 {
-        return ast.addNode(expr_type, symbol_idx, std.math.nan_u32, std.math.nan_u32, loc);
+    pub fn addLiteralNode(ast: *Ast, node_type: Type, symbol_idx: usize, loc: LocInfo) u32 {
+        return ast.addNode(node_type, symbol_idx, std.math.nan_u32, std.math.nan_u32, loc);
     }
 
     pub fn print(ast: *Ast, node: u32, left: u8, level: u32) void {
