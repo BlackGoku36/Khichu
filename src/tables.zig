@@ -50,6 +50,15 @@ pub const SymbolTable = struct {
         return exist;
     }
 
+    pub fn findByName(name: []u8) ?VarSymbol {
+    	for(0.., varTable.items(.name)) |i, var_name|{
+        	if(std.mem.eql(u8, name, var_name)){
+         		return varTable.get(i);
+         	}
+         }
+         return null;
+    }
+
     pub fn printVar() void {
         for (varTable.items(.name), varTable.items(.type), varTable.items(.expr_node)) |name, var_type, expr_node| {
             std.debug.print("{s}, {s}, {d}\n", .{name, var_type.str(), expr_node});

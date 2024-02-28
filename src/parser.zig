@@ -10,6 +10,7 @@ const LocInfo = tokenizer.LocInfo;
 const tables = @import("tables.zig");
 const SymbolTable = tables.SymbolTable;
 const SymbolType = tables.Type;
+const ExprTypeTable = tables.ExprTypeTable;
 
 const nan_u32 = std.math.nan_u32;
 
@@ -300,6 +301,75 @@ pub const Parser = struct {
         if (exit) std.process.exit(1);
     }
 
+    pub fn analyse_type_semantic(parser: *Parser, curr_node: u32) void {
+    	var node = &parser.ast.nodes.items[curr_node];
+		var left_exist = node.left != nan_u32;
+		var right_exist = node.right != nan_u32;
+
+    	if (left_exist) {
+   		     parser.analyse_type_semantic(node.left);
+    	}
+    	if (right_exist) {
+   		     parser.analyse_type_semantic(node.right);
+    	}
+
+     	switch(node.type){
+      		.add, .sub, .mult, .div => {
+        		if(left_exist and right_exist){
+          			var left_type: SymbolType = undefined;
+          			var right_type: SymbolType = undefined;
+             		const left_node: Node = parser.ast.nodes.items[node.left];
+             		const right_node: Node = parser.ast.nodes.items[node.right];
+               		switch(left_node.type){
+                 		.identifier => {
+                 			const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
+                			if(SymbolTable.findByName(name)) | sym |{
+                 				left_type = sym.type;
+                 			}else{
+                   				unreachable;
+                   			}
+                   		},
+                     	.int_literal => left_type = .t_int,
+                      	.float_literal => left_type = .t_float,
+                       	.bool_literal => left_type = .t_bool,
+                       	.add, .sub, .mult, .div => {
+                        	left_type = ExprTypeTable.table.items[left_node.idx].type;
+                        },
+                        else => {unreachable;},
+                 	}
+                  	switch(right_node.type){
+                  		.identifier => {
+                  			const name: []u8 = parser.source[right_node.loc.start..right_node.loc.end];
+                 			if(SymbolTable.findByName(name)) | sym |{
+                  				right_type = sym.type;
+                  			}else{
+                     			unreachable;
+                        	}
+                       	},
+                     	.int_literal => right_type = .t_int,
+                      	.float_literal => right_type = .t_float,
+                       	.bool_literal => right_type = .t_bool,
+                        .add, .sub, .mult, .div => {
+                         	right_type = ExprTypeTable.table.items[right_node.idx].type;
+                        },
+                        else =>{unreachable;},
+                  	}
+                  	if(left_type != right_type){
+                   		parser.reportError(node.loc, "Types miss-match between '{s}' and '{s}'\n", .{ left_type.str(), right_type.str() }, false);
+                   		parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_type.str()}, false);
+                   		parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_type.str()}, true);
+                   	}
+                    node.idx = ExprTypeTable.appendExprType(left_type);
+          		}else if(left_exist and !right_exist){
+
+            	}else if(right_exist and !left_exist){
+
+             	}
+        	},
+         	else => {}
+      	}
+    }
+
     pub fn analyse_chain_type(parser: *Parser, curr_node: u32) Node {
         const node = parser.ast.nodes.items[curr_node];
         var left_node: Node = undefined;
@@ -349,15 +419,16 @@ pub const Parser = struct {
         return node;
     }
 
-    pub fn analyse(parser: *Parser, curr_node: u32) void {
+    // TODO: IDK why I made this and what is special about this
+    pub fn analyse_bool(parser: *Parser, curr_node: u32) void {
         const node = parser.ast.nodes.items[curr_node];
 
         if (node.left != nan_u32) {
-            parser.analyse(node.left);
+            parser.analyse_bool(node.left);
         }
 
         if (node.right != nan_u32) {
-            parser.analyse(node.right);
+            parser.analyse_bool(node.right);
         }
 
         switch (node.type) {
@@ -446,6 +517,9 @@ pub const Parser = struct {
                 }
             }
         }
+    }
+
+    pub fn analyze(parser: *Parser) void {
         // Analyze
         for (parser.ast_roots.items) |root_idx| {
             const ast_node = parser.ast.nodes.items[root_idx];
@@ -453,18 +527,21 @@ pub const Parser = struct {
                 .var_stmt => {
                     const symbol_idx = ast_node.idx;
                     const symbol_entry = SymbolTable.varTable.get(symbol_idx);
-                    parser.analyse(symbol_entry.expr_node);
+                    parser.analyse_bool(symbol_entry.expr_node);
                     _ = parser.analyse_chain_type(symbol_entry.expr_node);
+                    parser.analyse_type_semantic(symbol_entry.expr_node);
                 },
                 .print_stmt => {
                     const left_idx = ast_node.left;
-                    parser.analyse(left_idx);
+                    parser.analyse_bool(left_idx);
                     _ = parser.analyse_chain_type(left_idx);
+                    parser.analyse_type_semantic(left_idx);
                 },
                 .assign_stmt => {
                     const right_idx = ast_node.right;
-                    parser.analyse(right_idx);
+                    parser.analyse_bool(right_idx);
                     _ = parser.analyse_chain_type(right_idx);
+                    parser.analyse_type_semantic(right_idx);
                 },
                 else => {}
             }

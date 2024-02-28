@@ -95,6 +95,10 @@ pub const Ast = struct {
         ast.nodes.deinit();
     }
 
+    pub fn setNodeIdx(ast: *Ast, atIndex: usize, index: usize) void {
+    	ast.nodes.items[atIndex].idx = index;
+    }
+
     pub fn addNode(ast: *Ast, node_type: Type, idx: usize, left: u32, right: u32, loc: LocInfo) u32 {
         const node_idx: u32 = @as(u32, @intCast(ast.nodes.items.len));
         ast.nodes.append(.{ .type = node_type, .idx = idx, .left = left, .right = right, .loc = loc }) catch |err| {
@@ -121,11 +125,11 @@ pub const Ast = struct {
         }
 
         if (left == 1) {
-            std.debug.print("{s} (left) (idx: {d})\n", .{ast.nodes.items[node].type.str(), ast.nodes.items[node].idx});
+            std.debug.print("{s} (left) (self_idx: {d}) (out_idx: {d})\n", .{ast.nodes.items[node].type.str(), node, ast.nodes.items[node].idx});
         } else if (left == 2) {
-            std.debug.print("{s} (right) (idx: {d})\n", .{ast.nodes.items[node].type.str(), ast.nodes.items[node].idx});
+            std.debug.print("{s} (right) (self_idx: {d}) (out_idx: {d})\n", .{ast.nodes.items[node].type.str(), node, ast.nodes.items[node].idx});
         } else {
-            std.debug.print("{s} (root) (idx: {d})\n", .{ast.nodes.items[node].type.str(), ast.nodes.items[node].idx});
+            std.debug.print("{s} (root) (self_idx: {d}) (out_idx: {d})\n", .{ast.nodes.items[node].type.str(), node, ast.nodes.items[node].idx});
         }
 
         if (ast.nodes.items[node].left != std.math.nan_u32) {

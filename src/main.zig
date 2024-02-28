@@ -45,6 +45,11 @@ pub fn main() !void {
     for (parser.ast_roots.items) |roots| {
         parser.ast.print(roots, 0, 0);
     }
+    parser.analyze();
+    std.debug.print("\n------ NEW AST ------\n", .{});
+    for (parser.ast_roots.items) |roots| {
+        parser.ast.print(roots, 0, 0);
+    }
 
     std.debug.print("\n------ SYMBOL TABLE (VAR)------\n", .{});
     SymbolTable.printVar();

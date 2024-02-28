@@ -3,7 +3,9 @@ const Ast = @import("../ast.zig").Ast;
 //const ByteCodePool = @import("bytecode.zig").ByteCodePool;
 //const ByteCode = @import("bytecode.zig").ByteCode;
 //const Value = @import("bytecode.zig").Value;
-const SymbolTable = @import("../tables.zig").SymbolTable;
+const tables = @import("../tables.zig");
+const SymbolTable = tables.SymbolTable;
+const ExprTypeTable = tables.ExprTypeTable;
 const Parser = @import("../parser.zig").Parser;
 
 const wasm = @import("wasm.zig");
@@ -103,8 +105,8 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
             sec.results.deinit();
         }
     }
-    //try sectionType.func_type.items[0].results.append(0x7F);
-    try sectionType.func_type.items[1].params.append(0x7F);
+    // TODO: Remove this hard coding someday
+    try sectionType.func_type.items[1].params.append(@intFromEnum(ValueType.f32));
 
     var header_bytes: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
     defer header_bytes.deinit();
@@ -231,10 +233,38 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
     }
 
     switch (ast.nodes.items[node_idx].type) {
-        .add => try bytecode.append(@intFromEnum(OpCode.i32_add)),
-        .sub => try bytecode.append(@intFromEnum(OpCode.i32_sub)),
-        .mult => try bytecode.append(@intFromEnum(OpCode.i32_mult)),
-        .div => try bytecode.append(@intFromEnum(OpCode.i32_div_s)), // What is the difference between div_s and div_u?
+        .add => {
+        	var expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+         	switch(expr_type){
+         		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_add)),
+           		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_add)),
+             	.t_bool => unreachable,
+          	}
+        },
+        .sub => {
+        	var expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+         	switch(expr_type){
+         		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_sub)),
+           		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_sub)),
+             	.t_bool => unreachable,
+          	}
+        },
+        .mult => {
+        	var expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+         	switch(expr_type){
+         		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_mult)),
+           		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_mult)),
+             	.t_bool => unreachable,
+          	}
+        },
+        .div => {
+        	var expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+         	switch(expr_type){
+         		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_div_s)),
+           		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_div)),
+             	.t_bool => unreachable,
+          	}
+         },
         .int_literal => {
             var int: i32 = 0;
             if (std.fmt.parseInt(i32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end], 10)) |out| {
@@ -245,15 +275,21 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             try bytecode.append(@intFromEnum(OpCode.i32_const));
             try bytecode.append(@intCast(int));
         },
-//        .float_literal => {
-//            var float: f32 = 0.0;
-//            if (std.fmt.parseFloat(f32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end])) |out| {
-//                float = out;
-//            } else |err| {
-//                std.debug.print("Error while parsing float literal: {any}\n", .{err});
-//            }
-//            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{.float = float}));
-//        },
+        .float_literal => {
+            var float: f32 = 0.0;
+            if (std.fmt.parseFloat(f32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end])) |out| {
+            	float = out;
+            } else |err| {
+            	std.debug.print("Error while parsing float literal: {any}\n", .{err});
+            }
+            try bytecode.append(@intFromEnum(OpCode.f32_const));
+            // Bytes of float in little-endian (by IEEE 754 bit pattern)
+            var float_byte: u32 = @byteSwap(@as(u32, @bitCast(float)));
+            try bytecode.append(@truncate(float_byte >> 24));
+            try bytecode.append(@truncate(float_byte >> 16));
+            try bytecode.append(@truncate(float_byte >> 8));
+            try bytecode.append(@truncate(float_byte));
+        },
 //        .bool_literal => {
 //            var boolean: bool = false;
 //            if (source[ast.nodes.items[node_idx].loc.start] == 't') {
@@ -305,17 +341,18 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             switch(symbol_entry.type){
                 .t_int => {
                     value = .{.int = 0};
+                    try locals.append(.{.locals = 1, .locals_type = ValueType.i32});
                 },
                 .t_float => {
                     value = .{.float = 0.0};
+                    try locals.append(.{.locals = 1, .locals_type = ValueType.f32});
                 },
                 .t_bool => {
                     value = .{.boolean = false};
+                    try locals.append(.{.locals = 1, .locals_type = ValueType.i32});
                 },
             }
             var index = try lv.add(symbol_entry.name, value);
-
-            try locals.append(.{.locals = 1, .locals_type = ValueType.i32});
 
             try bytecode.append(@intFromEnum(OpCode.local_set));
             try bytecode.append(@intCast(index));

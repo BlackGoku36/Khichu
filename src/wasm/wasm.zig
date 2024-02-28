@@ -93,6 +93,7 @@ pub const OpCode = enum(u8){
     i64_const = 0x42,
     f32_const = 0x43,
     f64_const = 0x44,
+    	// i32
     i32_add = 0x6A,
     i32_sub = 0x6B,
     i32_mult = 0x6C,
@@ -103,5 +104,10 @@ pub const OpCode = enum(u8){
     i32_xor = 0x73,
     i32_shl = 0x74,
     i32_shr_s = 0x75,
-    i32_shr_u = 0x76
+    i32_shr_u = 0x76,
+    	// f32
+    f32_add = 0x92,
+    f32_sub = 0x93,
+    f32_mult = 0x94,
+    f32_div = 0x95
 };

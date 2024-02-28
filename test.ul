@@ -13,7 +13,12 @@
 ////var a: bool = x < y;
 ////print(z && a);
 
-var x: int = 5;
-var y: int = 2;
-var z: int = x + y;
-print(z / 3);
+//var x: int = 5;
+//var y: int = 2;
+//var z: int = x + y;
+//print(z / 3);
+
+//var x: float = 5; generate x it as int and not float
+var x: float = 5.3 / 2.0;
+var y: float = 10.1;
+print(x + 1.0 + y);
