@@ -3,7 +3,7 @@ const Ast = @import("ast.zig").Ast;
 const ByteCodePool = @import("bytecode.zig").ByteCodePool;
 const ByteCode = @import("bytecode.zig").ByteCode;
 const Value = @import("bytecode.zig").Value;
-const Symbol = @import("symbol.zig").Symbol;
+const SymbolTable = @import("tables.zig").SymbolTable;
 
 fn generateCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePool) void {
     if (ast.nodes.items[node_idx].left != std.math.nan_u32) {
@@ -80,7 +80,7 @@ pub fn generateCode(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePool)
     switch (ast.nodes.items[node_idx].type) {
         .var_stmt => {
             const node = ast.nodes.items[node_idx];
-            const symbol_entry = Symbol.varTable.get(node.symbol_idx);
+            const symbol_entry = SymbolTable.varTable.get(node.symbol_idx);
             generateCodeFromAst(ast, symbol_entry.expr_node, source, pool);
             var value: Value = undefined;
             switch(symbol_entry.type){

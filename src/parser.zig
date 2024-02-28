@@ -7,8 +7,9 @@ const Token = tokenizer.Token;
 const Tokenizer = tokenizer.Tokenizer;
 const TokenType = tokenizer.TokenType;
 const LocInfo = tokenizer.LocInfo;
-const Symbol = @import("symbol.zig").Symbol;
-const SymbolType = @import("symbol.zig").Type;
+const tables = @import("tables.zig");
+const SymbolTable = tables.SymbolTable;
+const SymbolType = tables.Type;
 
 const nan_u32 = std.math.nan_u32;
 
@@ -184,8 +185,8 @@ pub const Parser = struct {
             }
             const expr_node = parser.assignment();
             const loc: LocInfo = .{
-                .start = ident_node.loc.start, 
-                .end = parser.peekPrev().loc.end, 
+                .start = ident_node.loc.start,
+                .end = parser.peekPrev().loc.end,
                 .line = ident_node.loc.line
             };
             return parser.ast.addNode(.assign_stmt, std.math.nan_u32, ident_idx, expr_node, loc);
@@ -214,7 +215,7 @@ pub const Parser = struct {
 
         const ident = parser.peekPrev();
 
-        const var_exist = Symbol.exists(parser.source[ident.loc.start..ident.loc.end]);
+        const var_exist = SymbolTable.exists(parser.source[ident.loc.start..ident.loc.end]);
         if(var_exist){
             parser.reportError(ident.loc, "Variable named '{s}' already exists.\n", .{parser.source[ident.loc.start..ident.loc.end]}, true);
         }
@@ -242,7 +243,7 @@ pub const Parser = struct {
             else => unreachable,
         }
 
-        const symbol_idx = Symbol.appendVar(.{
+        const symbol_idx = SymbolTable.appendVar(.{
             .name = parser.source[ident.loc.start..ident.loc.end],
             .type = symbol_type,
             .expr_node = expr_node
@@ -450,8 +451,8 @@ pub const Parser = struct {
             const ast_node = parser.ast.nodes.items[root_idx];
             switch(ast_node.type){
                 .var_stmt => {
-                    const symbol_idx = ast_node.symbol_idx;
-                    const symbol_entry = Symbol.varTable.get(symbol_idx);
+                    const symbol_idx = ast_node.idx;
+                    const symbol_entry = SymbolTable.varTable.get(symbol_idx);
                     parser.analyse(symbol_entry.expr_node);
                     _ = parser.analyse_chain_type(symbol_entry.expr_node);
                 },

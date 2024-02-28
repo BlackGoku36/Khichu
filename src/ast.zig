@@ -65,7 +65,7 @@ pub const Type = enum {
 pub const Node = struct {
     loc: LocInfo,
     type: Type,
-    symbol_idx: usize,
+    idx: usize,
     left: u32,
     right: u32,
 
@@ -95,20 +95,20 @@ pub const Ast = struct {
         ast.nodes.deinit();
     }
 
-    pub fn addNode(ast: *Ast, node_type: Type, symbol_idx: usize, left: u32, right: u32, loc: LocInfo) u32 {
-        const idx: u32 = @as(u32, @intCast(ast.nodes.items.len));
-        ast.nodes.append(.{ .type = node_type, .symbol_idx = symbol_idx, .left = left, .right = right, .loc = loc }) catch |err| {
+    pub fn addNode(ast: *Ast, node_type: Type, idx: usize, left: u32, right: u32, loc: LocInfo) u32 {
+        const node_idx: u32 = @as(u32, @intCast(ast.nodes.items.len));
+        ast.nodes.append(.{ .type = node_type, .idx = idx, .left = left, .right = right, .loc = loc }) catch |err| {
             std.debug.print("Error while adding node: {any}", .{err});
         };
-        return idx;
+        return node_idx;
     }
 
-    pub fn addUnaryNode(ast: *Ast, node_type: Type, symbol_idx:usize, left: u32, loc: LocInfo) u32 {
-        return ast.addNode(node_type, symbol_idx, left, std.math.nan_u32, loc);
+    pub fn addUnaryNode(ast: *Ast, node_type: Type, idx:usize, left: u32, loc: LocInfo) u32 {
+        return ast.addNode(node_type, idx, left, std.math.nan_u32, loc);
     }
 
-    pub fn addLiteralNode(ast: *Ast, node_type: Type, symbol_idx: usize, loc: LocInfo) u32 {
-        return ast.addNode(node_type, symbol_idx, std.math.nan_u32, std.math.nan_u32, loc);
+    pub fn addLiteralNode(ast: *Ast, node_type: Type, idx: usize, loc: LocInfo) u32 {
+        return ast.addNode(node_type, idx, std.math.nan_u32, std.math.nan_u32, loc);
     }
 
     pub fn print(ast: *Ast, node: u32, left: u8, level: u32) void {
@@ -121,11 +121,11 @@ pub const Ast = struct {
         }
 
         if (left == 1) {
-            std.debug.print("{s} (left)\n", .{ast.nodes.items[node].type.str()});
+            std.debug.print("{s} (left) (idx: {d})\n", .{ast.nodes.items[node].type.str(), ast.nodes.items[node].idx});
         } else if (left == 2) {
-            std.debug.print("{s} (right)\n", .{ast.nodes.items[node].type.str()});
+            std.debug.print("{s} (right) (idx: {d})\n", .{ast.nodes.items[node].type.str(), ast.nodes.items[node].idx});
         } else {
-            std.debug.print("{s} (root)\n", .{ast.nodes.items[node].type.str()});
+            std.debug.print("{s} (root) (idx: {d})\n", .{ast.nodes.items[node].type.str(), ast.nodes.items[node].idx});
         }
 
         if (ast.nodes.items[node].left != std.math.nan_u32) {

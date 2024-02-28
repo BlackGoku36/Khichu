@@ -4,7 +4,9 @@ const Parser = @import("parser.zig").Parser;
 const ByteCodePool = @import("bytecode.zig").ByteCodePool;
 const codegen = @import("codegen.zig");
 const VM = @import("vm.zig").VM;
-const Symbol = @import("symbol.zig").Symbol;
+const tables = @import("tables.zig");
+const SymbolTable = tables.SymbolTable;
+const ExprTypeTable = tables.ExprTypeTable;
 
 const wasm_codegen = @import("wasm/codegen.zig");
 
@@ -32,7 +34,8 @@ pub fn main() !void {
     tokenizer.print();
     std.debug.print("\n", .{});
 
-    Symbol.createTables(allocator);
+    SymbolTable.createTables(allocator);
+    ExprTypeTable.createTable(allocator);
 
     var parser = Parser.init(allocator, tokenizer);
     defer parser.deinit();
@@ -44,8 +47,11 @@ pub fn main() !void {
     }
 
     std.debug.print("\n------ SYMBOL TABLE (VAR)------\n", .{});
-    Symbol.printVar();
-    
+    SymbolTable.printVar();
+
+    std.debug.print("\n------ EXPR TYPE TABLE -------\n", .{});
+    ExprTypeTable.printExprTypes();
+
     var out_file = try std.fs.cwd().createFile("out.wasm", .{});
     defer out_file.close();
 
@@ -61,7 +67,8 @@ pub fn main() !void {
 //    std.debug.print("\n------ BYTECODE ------\n", .{});
 //    bytecode_pool.print();
 //
-    Symbol.destroyTables();
+	ExprTypeTable.destroyTable();
+    SymbolTable.destroyTables();
 //
 //    var vm = VM.init(allocator, bytecode_pool);
 //    defer vm.deinit();

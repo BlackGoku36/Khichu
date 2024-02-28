@@ -3,7 +3,7 @@ const Ast = @import("../ast.zig").Ast;
 //const ByteCodePool = @import("bytecode.zig").ByteCodePool;
 //const ByteCode = @import("bytecode.zig").ByteCode;
 //const Value = @import("bytecode.zig").Value;
-const Symbol = @import("../symbol.zig").Symbol;
+const SymbolTable = @import("../tables.zig").SymbolTable;
 const Parser = @import("../parser.zig").Parser;
 
 const wasm = @import("wasm.zig");
@@ -299,7 +299,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
     switch (ast.nodes.items[node_idx].type) {
         .var_stmt => {
             const node = ast.nodes.items[node_idx];
-            const symbol_entry = Symbol.varTable.get(node.symbol_idx);
+            const symbol_entry = SymbolTable.varTable.get(node.idx);
             try generateWASMCodeFromAst(ast, symbol_entry.expr_node, source, bytecode, lv);
             var value: VariableValue = undefined;
             switch(symbol_entry.type){
