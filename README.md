@@ -24,6 +24,8 @@ x: float = 8.2 + 2.1 / 3.8;
 ```
 
 ### Language
+- Add functions, conditioanls and loops
+- Add data types such as different signedness of integer with different size, arrays, etc.
 
 ### WASM
 - Make indexes, sizes, etc a LEB128 type
