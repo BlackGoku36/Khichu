@@ -313,6 +313,7 @@ pub const Parser = struct {
    		     parser.analyse_type_semantic(node.right);
     	}
 
+     	// TODO: I forgot why I keep checking left/right exist for operations?
      	switch(node.type){
       		.add, .sub, .mult, .div => {
         		if(left_exist and right_exist){
@@ -332,7 +333,7 @@ pub const Parser = struct {
                      	.int_literal => left_type = .t_int,
                       	.float_literal => left_type = .t_float,
                        	.bool_literal => left_type = .t_bool,
-                       	.add, .sub, .mult, .div => {
+                       	.add, .sub, .mult, .div, .negate => {
                         	left_type = ExprTypeTable.table.items[left_node.idx].type;
                         },
                         else => {unreachable;},
@@ -349,7 +350,7 @@ pub const Parser = struct {
                      	.int_literal => right_type = .t_int,
                       	.float_literal => right_type = .t_float,
                        	.bool_literal => right_type = .t_bool,
-                        .add, .sub, .mult, .div => {
+                        .add, .sub, .mult, .div, .negate => {
                          	right_type = ExprTypeTable.table.items[right_node.idx].type;
                         },
                         else =>{unreachable;},
@@ -366,6 +367,31 @@ pub const Parser = struct {
 
              	}
         	},
+         	.negate => {
+          		// TODO: Remove this code duplication
+          		if(left_exist){
+         			var left_type: SymbolType = undefined;
+            		const left_node: Node = parser.ast.nodes.items[node.left];
+              		switch(left_node.type){
+                		.identifier => {
+                			const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
+                			if(SymbolTable.findByName(name)) | sym |{
+                				left_type = sym.type;
+                			}else{
+                  				unreachable;
+                  			}
+                  		},
+                    	.int_literal => left_type = .t_int,
+                     	.float_literal => left_type = .t_float,
+                      	.bool_literal => unreachable,
+                      	.add, .sub, .mult, .div => {
+                       		left_type = ExprTypeTable.table.items[left_node.idx].type;
+                        },
+                        else => unreachable,
+                	}
+                 	node.idx = ExprTypeTable.appendExprType(left_type);
+            	}
+          	},
          	else => {}
       	}
     }
@@ -527,19 +553,19 @@ pub const Parser = struct {
                 .var_stmt => {
                     const symbol_idx = ast_node.idx;
                     const symbol_entry = SymbolTable.varTable.get(symbol_idx);
-                    parser.analyse_bool(symbol_entry.expr_node);
+//                    parser.analyse_bool(symbol_entry.expr_node);
                     _ = parser.analyse_chain_type(symbol_entry.expr_node);
                     parser.analyse_type_semantic(symbol_entry.expr_node);
                 },
                 .print_stmt => {
                     const left_idx = ast_node.left;
-                    parser.analyse_bool(left_idx);
+//                    parser.analyse_bool(left_idx);
                     _ = parser.analyse_chain_type(left_idx);
                     parser.analyse_type_semantic(left_idx);
                 },
                 .assign_stmt => {
                     const right_idx = ast_node.right;
-                    parser.analyse_bool(right_idx);
+//                    parser.analyse_bool(right_idx);
                     _ = parser.analyse_chain_type(right_idx);
                     parser.analyse_type_semantic(right_idx);
                 },

@@ -1,3 +1,3 @@
-var x: float = 5.5;
-var y: float = 1.9;
-print(x + y);
+var x: float = 3.0;
+var y: float = 5.0;
+print(-(-(x + 3.0) + -y) * -1.5);

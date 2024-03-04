@@ -219,12 +219,14 @@ fn generateWASM(parser: *Parser, source: []u8, allocator: std.mem.Allocator) !Co
 }
 
 fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.ArrayList(Inst), lv: *VarTable) !void {
+	const left_exist = ast.nodes.items[node_idx].left != std.math.nan_u32;
+	const right_exist = ast.nodes.items[node_idx].right != std.math.nan_u32;
 
-    if (ast.nodes.items[node_idx].left != std.math.nan_u32) {
+    if (left_exist) {
         try generateWASMCodeFromAst(ast, ast.nodes.items[node_idx].left, source, bytecode, lv);
     }
 
-    if (ast.nodes.items[node_idx].right != std.math.nan_u32) {
+    if (right_exist) {
         try generateWASMCodeFromAst(ast, ast.nodes.items[node_idx].right, source, bytecode, lv);
     }
 
@@ -286,25 +288,71 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             try bytecode.append(@truncate(float_byte >> 8));
             try bytecode.append(@truncate(float_byte));
         },
-//        .bool_literal => {
-//            var boolean: bool = false;
-//            if (source[ast.nodes.items[node_idx].loc.start] == 't') {
-//                boolean = true;
-//            } else {
-//                boolean = false;
-//            }
-//            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{.boolean = boolean}));
-//        },
-//        .bool_not => pool.emitBytecodeOp(.op_not),
-//        .bool_and => pool.emitBytecodeOp(.op_and),
-//        .bool_or => pool.emitBytecodeOp(.op_or),
-//        .negate => pool.emitBytecodeOp(.op_negate),
-//        .greater => pool.emitBytecodeOp(.op_greater),
-//        .lesser => pool.emitBytecodeOp(.op_less),
-//        .greater_equal => pool.emitBytecodeOp(.op_greater_than),
-//        .lesser_equal => pool.emitBytecodeOp(.op_less_than),
-//        .equal_equal => pool.emitBytecodeOp(.op_equal),
-//        .not_equal => pool.emitBytecodeOp(.op_not_equal),
+        .bool_literal => {
+           	try bytecode.append(@intFromEnum(OpCode.i32_const));
+            	if (source[ast.nodes.items[node_idx].loc.start] == 't') {
+             		try bytecode.append(0x01);
+            	} else {
+              		try bytecode.append(0x00);
+            	}
+            },
+        .bool_not => {
+            try bytecode.append(@intFromEnum(OpCode.i32_const));
+           	try bytecode.append(0x01);
+            try bytecode.append(@intFromEnum(OpCode.i32_xor));
+        },
+        .bool_and => try bytecode.append(@intFromEnum(OpCode.i32_and)),
+        .bool_or => try bytecode.append(@intFromEnum(OpCode.i32_or)),
+        .negate => {
+            if(left_exist){
+            	const left_node = ast.nodes.items[ast.nodes.items[node_idx].left];
+             	switch(left_node.type){
+                	.int_literal => {
+                    	// Multiply -1 with the value to get negative value
+                        try bytecode.append(@intFromEnum(OpCode.i32_const));
+                        try bytecode.append(0x7F); // -1 in LEB128
+                        try bytecode.append(@intFromEnum(OpCode.i32_mult));
+                    },
+                    .float_literal => {
+                     	try bytecode.append(@intFromEnum(OpCode.f32_neg));
+                    },
+                    .identifier => {
+                       	const symbol_type = SymbolTable.findByName(source[left_node.loc.start..left_node.loc.end]).?.type;
+                        switch(symbol_type){
+                          	.t_int => {
+                           		// Multiply -1 with the value to get negative value
+                             	try bytecode.append(@intFromEnum(OpCode.i32_const));
+                              	try bytecode.append(0x7F); // -1 in LEB128
+                               	try bytecode.append(@intFromEnum(OpCode.i32_mult));
+                            },
+                            .t_float => try bytecode.append(@intFromEnum(OpCode.f32_neg)),
+                            .t_bool => unreachable,
+                        }
+                    },
+                    .bool_literal => unreachable,
+                    .add, .sub, .mult, .div => {
+                    	const expr_type = ExprTypeTable.table.items[left_node.idx].type;
+                     	switch(expr_type){
+                     	  	.t_int => {
+                     	   		// Multiply -1 with the value to get negative value
+                     	     	try bytecode.append(@intFromEnum(OpCode.i32_const));
+                     	      	try bytecode.append(0x7F); // -1 in LEB128
+                     	       	try bytecode.append(@intFromEnum(OpCode.i32_mult));
+                     	    },
+                     	    .t_float => try bytecode.append(@intFromEnum(OpCode.f32_neg)),
+                     	    .t_bool => unreachable,
+                     	}
+                    },
+                    else => {}
+                }
+            }
+        },
+//      .greater => pool.emitBytecodeOp(.op_greater),
+//      .lesser => pool.emitBytecodeOp(.op_less),
+//      .greater_equal => pool.emitBytecodeOp(.op_greater_than),
+//      .lesser_equal => pool.emitBytecodeOp(.op_less_than),
+//      .equal_equal => pool.emitBytecodeOp(.op_equal),
+//      .not_equal => pool.emitBytecodeOp(.op_not_equal),
         .identifier => {
             const name: []u8 = source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end];
             try bytecode.append(@intFromEnum(OpCode.local_get));

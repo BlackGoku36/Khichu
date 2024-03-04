@@ -109,5 +109,6 @@ pub const OpCode = enum(u8){
     f32_add = 0x92,
     f32_sub = 0x93,
     f32_mult = 0x94,
-    f32_div = 0x95
+    f32_div = 0x95,
+    f32_neg = 0x8C,
 };
