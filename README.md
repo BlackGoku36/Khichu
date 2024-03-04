@@ -1,4 +1,6 @@
-# UndefinedLanguage
+# Khichu
+
+[Khichu](https://en.wikipedia.org/wiki/Khichu) is experimental programming language that targets WASM and a custom register-based VM.
 
 ## TODO
 
