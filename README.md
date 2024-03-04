@@ -26,6 +26,8 @@ x: float = 8.2 + 2.1 / 3.8;
 ### Language
 
 ### WASM
+- Make indexes, sizes, etc a LEB128 type
+- Remove hardcoding of some of wasm code-gen
 - Add bools back
 - `var x: float = 5;` interpret 5 as integer, so generated wasm code assignmet doesn't work.
 
