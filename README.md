@@ -4,8 +4,6 @@
 
 - Add some tests running facility
 - Check if code-gen for assignment statement/expression is good or not.
-- Turn current VM to register base.
-- Add backend for WASM.
 - Find some way to collect as many as errors possible before quitting.
 - Allow 'var x = 5;', that is allow type inference.
 - Analyzer
@@ -17,8 +15,7 @@
     - Disallow changing type on assignment to same variable (if var is float, then it is legal right now to assign bool to it, but it should be illegal).
 - Minor refactor:
     - Separate analyzer from parser file.
-    - Put current code-gen and vm into it own folder.
-    - Create new folder for wasm codegen.
+    - Code is bit stinky
 - What should be better error message?
 ```
 test.ul:0: Expected ';' after 'expression', found 'identifier'.
@@ -26,10 +23,21 @@ x: float = 8.2 + 2.1 / 3.8;
 ^--------------------------
 ```
 
+### Language
+
+### WASM
+- Add bools back
+- `var x: float = 5;` interpret 5 as integer, so generated wasm code assignmet doesn't work.
+
+### VM
+- Start Register-Based VM
+
 ## FUTURE TODO
-- Suggest related variable names, for example, programmer uses `x_ids` but only `x_idx` exist, so it will suggest `x_idx`.
+- Suggest related variable names, for example, programmer types `x_ids` but only `x_idx` exist, so it will suggest `x_idx`.
 
 # WASM
+
+- [Spec](https://webassembly.github.io/spec/core/)
 - [Part-1](https://coinexsmartchain.medium.com/wasm-introduction-part-1-binary-format-57895d851580)
 - [Part-2](https://coinexsmartchain.medium.com/wasm-introduction-part-2-instruction-set-operand-stack-38e5171b52e6)
 - [Part-3](https://coinexsmartchain.medium.com/wasm-introduction-part-3-memory-7426f19c9624)
