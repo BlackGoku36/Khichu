@@ -362,9 +362,9 @@ pub const Parser = struct {
                    	}
                     node.idx = ExprTypeTable.appendExprType(left_type);
           		}else if(left_exist and !right_exist){
-
+            		@panic("TODO!");
             	}else if(right_exist and !left_exist){
-
+             		@panic("TODO!");
              	}
         	},
          	.negate => {

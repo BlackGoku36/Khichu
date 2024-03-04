@@ -95,6 +95,10 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
        .params = std.ArrayList(u8).init(allocator),
        .results = std.ArrayList(u8).init(allocator)
     });
+    try sectionType.func_type.append(.{
+       .params = std.ArrayList(u8).init(allocator),
+       .results = std.ArrayList(u8).init(allocator)
+    });
     defer {
         for(sectionType.func_type.items) |sec| {
             sec.params.deinit();
@@ -103,6 +107,7 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     }
     // TODO: Remove this hard coding someday
     try sectionType.func_type.items[1].params.append(@intFromEnum(ValueType.f32));
+    try sectionType.func_type.items[2].params.append(@intFromEnum(ValueType.i32));
 
     var header_bytes: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
     defer header_bytes.deinit();
@@ -130,7 +135,11 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     _ = try file.write(header_bytes.items);
     _ = try file.write(body_bytes.items);
 
-    _ = try file.write(&[_]u8{0x02, 0x0D, 0x01, 0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x01});
+    _ = try file.write(&[_]u8{
+    	0x02, 0x19, 0x02,
+     	0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x01,
+     	0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x02
+    });
 
     var functionSection: FunctionSection = .{
         .size = 0,
@@ -158,7 +167,7 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     // export func hard coded
     //_ = try file.write(&[_]u8{0x07,0x08,0x01,0x04,0x6D,0x61,0x69,0x6E,0x00,0x01});
     // hard code start section
-    _ = try file.write(&[_]u8{0x08,0x01,0x01});
+    _ = try file.write(&[_]u8{0x08,0x01,0x02});
 
     var code = try generateWASM(parser, source, allocator);
     defer {
@@ -402,10 +411,28 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             try bytecode.append(@intCast(index));
         },
         .print_stmt => {
-            const left = ast.nodes.items[node_idx].left;
-            try generateWASMCodeFromAst(ast, left, source, bytecode, lv);
+            const left_idx = ast.nodes.items[node_idx].left;
+            try generateWASMCodeFromAst(ast, left_idx, source, bytecode, lv);
+           	const left_node = ast.nodes.items[left_idx];
             try bytecode.append(@intFromEnum(OpCode.call));
-            try bytecode.append(0x00);
+            switch(left_node.type){
+               	.int_literal, .bool_literal => try bytecode.append(0x01),
+                .float_literal => try bytecode.append(0x00),
+                .identifier => {
+                    const symbol_type = SymbolTable.findByName(source[left_node.loc.start..left_node.loc.end]).?.type;
+                    switch(symbol_type){
+                        .t_int, .t_bool => try bytecode.append(0x01),
+                        .t_float => try bytecode.append(0x00),
+                    }
+                },
+                else => {
+                	const expr_type = ExprTypeTable.table.items[left_node.idx].type;
+                 	switch(expr_type){
+                 	  	.t_int, .t_bool => try bytecode.append(0x01),
+                 	    .t_float => try bytecode.append(0x00),
+                 	}
+                },
+            }
         },
         .assign_stmt => {
             const left = ast.nodes.items[node_idx].left;
