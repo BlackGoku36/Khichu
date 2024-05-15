@@ -315,7 +315,7 @@ pub const Parser = struct {
 
      	// TODO: I forgot why I keep checking left/right exist for operations?
      	switch(node.type){
-      		.add, .sub, .mult, .div => {
+      		.add, .sub, .mult, .div, .bool_not, .bool_and, .bool_or => {
         		if(left_exist and right_exist){
           			var left_type: SymbolType = undefined;
           			var right_type: SymbolType = undefined;
@@ -333,7 +333,7 @@ pub const Parser = struct {
                      	.int_literal => left_type = .t_int,
                       	.float_literal => left_type = .t_float,
                        	.bool_literal => left_type = .t_bool,
-                       	.add, .sub, .mult, .div, .negate => {
+                       	.add, .sub, .mult, .div, .negate, .bool_not, .bool_and, .bool_or => {
                         	left_type = ExprTypeTable.table.items[left_node.idx].type;
                         },
                         else => {unreachable;},
@@ -350,7 +350,7 @@ pub const Parser = struct {
                      	.int_literal => right_type = .t_int,
                       	.float_literal => right_type = .t_float,
                        	.bool_literal => right_type = .t_bool,
-                        .add, .sub, .mult, .div, .negate => {
+                        .add, .sub, .mult, .div, .negate, .bool_not, .bool_and, .bool_or => {
                          	right_type = ExprTypeTable.table.items[right_node.idx].type;
                         },
                         else =>{unreachable;},
@@ -396,6 +396,7 @@ pub const Parser = struct {
       	}
     }
 
+    // TODO: Doesn't properly handle identifiers and stuffs
     pub fn analyse_chain_type(parser: *Parser, curr_node: u32) Node {
         const node = parser.ast.nodes.items[curr_node];
         var left_node: Node = undefined;
@@ -554,19 +555,19 @@ pub const Parser = struct {
                     const symbol_idx = ast_node.idx;
                     const symbol_entry = SymbolTable.varTable.get(symbol_idx);
 //                    parser.analyse_bool(symbol_entry.expr_node);
-                    _ = parser.analyse_chain_type(symbol_entry.expr_node);
+//                    _ = parser.analyse_chain_type(symbol_entry.expr_node);
                     parser.analyse_type_semantic(symbol_entry.expr_node);
                 },
                 .print_stmt => {
                     const left_idx = ast_node.left;
 //                    parser.analyse_bool(left_idx);
-                    _ = parser.analyse_chain_type(left_idx);
+//                    _ = parser.analyse_chain_type(left_idx);
                     parser.analyse_type_semantic(left_idx);
                 },
                 .assign_stmt => {
                     const right_idx = ast_node.right;
 //                    parser.analyse_bool(right_idx);
-                    _ = parser.analyse_chain_type(right_idx);
+//                    _ = parser.analyse_chain_type(right_idx);
                     parser.analyse_type_semantic(right_idx);
                 },
                 else => {}
