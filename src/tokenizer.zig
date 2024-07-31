@@ -114,7 +114,7 @@ pub const Tokenizer = struct {
     pool: std.ArrayList(Token),
 
     pub fn init(allocator: std.mem.Allocator, source: []u8, source_name: []const u8) Tokenizer {
-        var tokenizer: Tokenizer = .{
+        const tokenizer: Tokenizer = .{
             .source = source,
             .source_name = source_name,
             .pool = std.ArrayList(Token).init(allocator),
@@ -181,7 +181,7 @@ pub const Tokenizer = struct {
     pub fn tokenize(tokenizer: *Tokenizer) void {
         while (tokenizer.current < tokenizer.source.len) {
             tokenizer.start = tokenizer.current;
-            var char: u8 = tokenizer.consume();
+            const char: u8 = tokenizer.consume();
             switch (char) {
                 '+' => {
                     tokenizer.add_token(.plus);

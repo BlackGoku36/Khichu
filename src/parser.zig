@@ -14,7 +14,7 @@ const ExprTypeTable = tables.ExprTypeTable;
 const FnTable = tables.FnTable;
 const FnCallTable = tables.FnCallTable;
 
-const nan_u32 = std.math.nan_u32;
+const nan_u32 = 0x7FC00000;
 
 pub const Parser = struct {
     current: u32,
@@ -67,23 +67,23 @@ pub const Parser = struct {
     fn primary(parser: *Parser) u32 {
         if (parser.match(.int)) {
             const int_lit = parser.peekPrev();
-            return parser.ast.addLiteralNode(.int_literal, std.math.nan_u32, int_lit.loc);
+            return parser.ast.addLiteralNode(.int_literal, nan_u32, int_lit.loc);
         }
         if (parser.match(.float)) {
             const float_lit = parser.peekPrev();
-            return parser.ast.addLiteralNode(.float_literal, std.math.nan_u32, float_lit.loc);
+            return parser.ast.addLiteralNode(.float_literal, nan_u32, float_lit.loc);
         }
         if (parser.match(.true) or parser.match(.false)) {
             const bool_lit = parser.peekPrev();
-            return parser.ast.addLiteralNode(.bool_literal, std.math.nan_u32, bool_lit.loc);
+            return parser.ast.addLiteralNode(.bool_literal, nan_u32, bool_lit.loc);
         }
         if(parser.match(.identifier)){
             const ident = parser.peekPrev();
-            return parser.ast.addLiteralNode(.identifier, std.math.nan_u32, ident.loc);
+            return parser.ast.addLiteralNode(.identifier, nan_u32, ident.loc);
         }
         if (parser.match(.left_paren)) {
             const left_paren = parser.peekPrev();
-            var expr: u32 = parser.expression();
+            const expr: u32 = parser.expression();
             if (!parser.match(.right_paren)) parser.reportError(left_paren.loc, "Expected ')' after expression\n", .{}, true);
             return expr;
         }
@@ -102,7 +102,7 @@ pub const Parser = struct {
                 .end = parser.getNode(node).loc.end,
                 .line = minus.loc.line,
             };
-            return parser.ast.addUnaryNode(.negate, std.math.nan_u32, node, loc);
+            return parser.ast.addUnaryNode(.negate, nan_u32, node, loc);
         }
         if (parser.match(.not)) {
             const not = parser.peekPrev();
@@ -112,7 +112,7 @@ pub const Parser = struct {
                 .end = parser.getNode(node).loc.end,
                 .line = not.loc.line,
             };
-            return parser.ast.addUnaryNode(.bool_not, std.math.nan_u32, node, loc);
+            return parser.ast.addUnaryNode(.bool_not, nan_u32, node, loc);
         }
         return parser.primary();
     }
@@ -123,7 +123,7 @@ pub const Parser = struct {
             const op_token = parser.peekPrev();
             const op_type: Type = if (op_token.type == .star) .mult else .div;
             const right = parser.unary();
-            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, nan_u32, left, right, op_token.loc);
         }
         return left;
     }
@@ -134,7 +134,7 @@ pub const Parser = struct {
             const op_token = parser.peekPrev();
             const op_type: Type = if (op_token.type == .plus) .add else .sub;
             const right = parser.factor();
-            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, nan_u32, left, right, op_token.loc);
         }
         return left;
     }
@@ -152,7 +152,7 @@ pub const Parser = struct {
                 else => {},
             }
             const right = parser.term();
-            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, nan_u32, left, right, op_token.loc);
         }
         return left;
     }
@@ -163,7 +163,7 @@ pub const Parser = struct {
             const op_token = parser.peekPrev();
             const op_type: Type = if (op_token.type == .equal_equal) .equal_equal else .not_equal;
             const right = parser.comparision();
-            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, nan_u32, left, right, op_token.loc);
         }
         return left;
     }
@@ -174,7 +174,7 @@ pub const Parser = struct {
             const op_token = parser.peekPrev();
             const op_type: Type = if (op_token.type == .amp_amp) .bool_and else .bool_or;
             const right = parser.equality();
-            left = parser.ast.addNode(op_type, std.math.nan_u32, left, right, op_token.loc);
+            left = parser.ast.addNode(op_type, nan_u32, left, right, op_token.loc);
         }
         return left;
     }
@@ -192,7 +192,7 @@ pub const Parser = struct {
                 .end = parser.peekPrev().loc.end,
                 .line = ident_node.loc.line
             };
-            return parser.ast.addNode(.assign_stmt, std.math.nan_u32, ident_idx, expr_node, loc);
+            return parser.ast.addNode(.assign_stmt, nan_u32, ident_idx, expr_node, loc);
         }
         return ident_idx;
     }
@@ -269,7 +269,7 @@ pub const Parser = struct {
             parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
         }
         const loc: LocInfo = .{.start = print_token.loc.start, .end = parser.peekPrev().loc.end, .line = print_token.loc.line};
-        return parser.ast.addUnaryNode(.print_stmt, std.math.nan_u32, expr_node, loc);
+        return parser.ast.addUnaryNode(.print_stmt, nan_u32, expr_node, loc);
     }
 
     pub fn block(parser: *Parser) void {
@@ -320,7 +320,7 @@ pub const Parser = struct {
     	if(!parser.match(.semi_colon)){
     	    parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
     	}
-    	const fn_name_node = parser.ast.addLiteralNode(.identifier, std.math.nan_u32, function_name_token.loc);
+    	const fn_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, function_name_token.loc);
      	const fn_idx = FnCallTable.appendFunction(.{.name_node = fn_name_node});
     	const loc: LocInfo = .{.start = function_name_token.loc.start, .end = parser.peekPrev().loc.end, .line = function_name_token.loc.line};
     	return parser.ast.addLiteralNode(.fn_call, fn_idx, loc);
@@ -342,7 +342,7 @@ pub const Parser = struct {
         const start = parser.ast_roots.items.len;
         parser.block();
         const end = parser.ast_roots.items.len;
-        const fn_name_node = parser.ast.addLiteralNode(.identifier, std.math.nan_u32, fn_name_token.loc);
+        const fn_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, fn_name_token.loc);
         const fn_idx = FnTable.appendFunction(.{.name_node = fn_name_node, .body_nodes_start = start, .body_nodes_end = end});
         const loc: LocInfo = .{.start = fn_token.loc.start, .end = fn_right_paren.loc.end, .line = fn_token.loc.line};
         return parser.ast.addLiteralNode(.fn_block, fn_idx, loc);
@@ -381,8 +381,8 @@ pub const Parser = struct {
 
     pub fn analyse_type_semantic(parser: *Parser, curr_node: u32) void {
     	var node = &parser.ast.nodes.items[curr_node];
-		var left_exist = node.left != nan_u32;
-		var right_exist = node.right != nan_u32;
+		const left_exist = node.left != nan_u32;
+		const right_exist = node.right != nan_u32;
 
     	if (left_exist) {
    		     parser.analyse_type_semantic(node.left);

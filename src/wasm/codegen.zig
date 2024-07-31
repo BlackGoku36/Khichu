@@ -19,6 +19,8 @@ const Inst = wasm.Inst;
 const ValueType = wasm.ValueType;
 const OpCode = wasm.OpCode;
 
+const nan_u32 = 0x7FC00000;
+
 pub const VariableValueType = enum { int, float, boolean };
 pub const VariableValue = union(VariableValueType) {
     int: i32,
@@ -78,10 +80,10 @@ pub const VarTable = struct{
 pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: std.mem.Allocator) !void {
     const module: Module = .{};
 
-    var magic: [4]u8 = .{};
-    std.mem.writeInt(u32, &magic, module.magic, .Big);
-    var version: [4]u8 = .{};
-    std.mem.writeInt(u32, &version, module.version, .Big);
+    var magic: [4]u8 = undefined;
+    std.mem.writeInt(u32, &magic, module.magic, .big);
+    var version: [4]u8 = undefined;
+    std.mem.writeInt(u32, &version, module.version, .big);
     _ = try file.write(&magic);
     _ = try file.write(&version);
 
@@ -237,7 +239,7 @@ fn generateWASM(parser: *Parser, source: []u8, fn_: FnSymbol, allocator: std.mem
 
     try bytecode.append(0x0B);
 
-    var code: Code = .{
+    const code: Code = .{
         .size = 0,
         .locals = locals,
         .instructions = bytecode
@@ -246,8 +248,8 @@ fn generateWASM(parser: *Parser, source: []u8, fn_: FnSymbol, allocator: std.mem
 }
 
 fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.ArrayList(Inst), lv: *VarTable) !void {
-	const left_exist = ast.nodes.items[node_idx].left != std.math.nan_u32;
-	const right_exist = ast.nodes.items[node_idx].right != std.math.nan_u32;
+	const left_exist = ast.nodes.items[node_idx].left != nan_u32;
+	const right_exist = ast.nodes.items[node_idx].right != nan_u32;
 
     if (left_exist) {
         try generateWASMCodeFromAst(ast, ast.nodes.items[node_idx].left, source, bytecode, lv);
@@ -259,7 +261,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
 
     switch (ast.nodes.items[node_idx].type) {
         .add => {
-        	var expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+        	const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
          	switch(expr_type){
          		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_add)),
            		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_add)),
@@ -267,7 +269,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
           	}
         },
         .sub => {
-        	var expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+        	const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
          	switch(expr_type){
          		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_sub)),
            		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_sub)),
@@ -275,7 +277,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
           	}
         },
         .mult => {
-        	var expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+        	const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
          	switch(expr_type){
          		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_mult)),
            		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_mult)),
@@ -283,7 +285,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
           	}
         },
         .div => {
-        	var expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+        	const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
          	switch(expr_type){
          		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_div_s)),
            		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_div)),
@@ -309,7 +311,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             }
             try bytecode.append(@intFromEnum(OpCode.f32_const));
             // Bytes of float in little-endian (by IEEE 754 bit pattern)
-            var float_byte: u32 = @byteSwap(@as(u32, @bitCast(float)));
+            const float_byte: u32 = @byteSwap(@as(u32, @bitCast(float)));
             try bytecode.append(@truncate(float_byte >> 24));
             try bytecode.append(@truncate(float_byte >> 16));
             try bytecode.append(@truncate(float_byte >> 8));
@@ -423,7 +425,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
                     try locals.append(.{.locals = 1, .locals_type = ValueType.i32});
                 },
             }
-            var index = try lv.add(symbol_entry.name, value);
+            const index = try lv.add(symbol_entry.name, value);
 
             try bytecode.append(@intFromEnum(OpCode.local_set));
             try bytecode.append(@intCast(index));

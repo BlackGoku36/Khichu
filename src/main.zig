@@ -16,7 +16,7 @@ pub fn main() !void {
     defer _ = gp.deinit();
 
 
-    var source_name = "demo.k";
+    const source_name = "demo.k";
 
     var file = try std.fs.cwd().openFile(source_name, .{});
     defer file.close();
