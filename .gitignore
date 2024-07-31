@@ -3,3 +3,4 @@ a.out
 a.out.dSYM
 zig-out
 zig-cache
+.zig-cache
