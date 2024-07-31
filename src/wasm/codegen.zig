@@ -27,12 +27,9 @@ pub const VariableValue = union(VariableValueType) {
     float: f32,
     boolean: bool,
 };
-pub const Variable = struct{
-    identifier: []u8,
-    value: VariableValue
-};
+pub const Variable = struct { identifier: []u8, value: VariableValue };
 
-pub const VarTable = struct{
+pub const VarTable = struct {
     variables: std.ArrayList(Variable),
 
     pub fn init(allocator: std.mem.Allocator) VarTable {
@@ -41,20 +38,20 @@ pub const VarTable = struct{
         };
     }
 
- //   pub fn print(gv_table: *GlobalVarTables) void {
- //       var map_iter = gv_table.values.iterator();
- //       while(map_iter.next()) |entry|{
- //           std.debug.print("key: {s}, ", .{entry.key_ptr.*});
- //           switch (entry.value_ptr.*) {
- //               .int => |val| std.debug.print("value: {d}\n", .{val}),
- //               .float => |val| std.debug.print("value: {d}\n", .{val}),
- //               .boolean => |val| std.debug.print("value: {any}\n", .{val}),
- //           }
- //       }
- //   }
+    //   pub fn print(gv_table: *GlobalVarTables) void {
+    //       var map_iter = gv_table.values.iterator();
+    //       while(map_iter.next()) |entry|{
+    //           std.debug.print("key: {s}, ", .{entry.key_ptr.*});
+    //           switch (entry.value_ptr.*) {
+    //               .int => |val| std.debug.print("value: {d}\n", .{val}),
+    //               .float => |val| std.debug.print("value: {d}\n", .{val}),
+    //               .boolean => |val| std.debug.print("value: {any}\n", .{val}),
+    //           }
+    //       }
+    //   }
 
     pub fn add(gv_table: *VarTable, identifier: []u8, value: VariableValue) !usize {
-        try gv_table.variables.append(.{.identifier = identifier, .value = value});
+        try gv_table.variables.append(.{ .identifier = identifier, .value = value });
         return gv_table.variables.items.len - 1;
     }
 
@@ -64,7 +61,7 @@ pub const VarTable = struct{
 
     pub fn getByName(gv_table: *VarTable, identifier: []u8) usize {
         for (gv_table.variables.items, 0..) |variable, i| {
-            if(std.mem.eql(u8, variable.identifier, identifier)){
+            if (std.mem.eql(u8, variable.identifier, identifier)) {
                 return i;
             }
         }
@@ -87,27 +84,15 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     _ = try file.write(&magic);
     _ = try file.write(&version);
 
-    var sectionType: SectionType = .{
-        .size = 0,
-        .func_type = std.ArrayList(FunctionType).init(allocator)
-    };
+    var sectionType: SectionType = .{ .size = 0, .func_type = std.ArrayList(FunctionType).init(allocator) };
     defer sectionType.func_type.deinit();
-    try sectionType.func_type.append(.{
-       .params = std.ArrayList(u8).init(allocator),
-       .results = std.ArrayList(u8).init(allocator)
-    });
-    try sectionType.func_type.append(.{
-       .params = std.ArrayList(u8).init(allocator),
-       .results = std.ArrayList(u8).init(allocator)
-    });
-    for(0..FnTable.table.items.len) |_| {
-    	try sectionType.func_type.append(.{
-       		.params = std.ArrayList(u8).init(allocator),
-         	.results = std.ArrayList(u8).init(allocator)
-        });
+    try sectionType.func_type.append(.{ .params = std.ArrayList(u8).init(allocator), .results = std.ArrayList(u8).init(allocator) });
+    try sectionType.func_type.append(.{ .params = std.ArrayList(u8).init(allocator), .results = std.ArrayList(u8).init(allocator) });
+    for (0..FnTable.table.items.len) |_| {
+        try sectionType.func_type.append(.{ .params = std.ArrayList(u8).init(allocator), .results = std.ArrayList(u8).init(allocator) });
     }
     defer {
-        for(sectionType.func_type.items) |sec| {
+        for (sectionType.func_type.items) |sec| {
             sec.params.deinit();
             sec.results.deinit();
         }
@@ -124,14 +109,14 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
 
     try body_bytes.append(@intCast(sectionType.func_type.items.len));
 
-    for(sectionType.func_type.items) |fns| {
+    for (sectionType.func_type.items) |fns| {
         try body_bytes.append(fns.id);
         try body_bytes.append(@intCast(fns.params.items.len));
-        for(fns.params.items) |param| {
+        for (fns.params.items) |param| {
             try body_bytes.append(param);
         }
         try body_bytes.append(@intCast(fns.results.items.len));
-        for(fns.results.items) |result| {
+        for (fns.results.items) |result| {
             try body_bytes.append(result);
         }
     }
@@ -142,11 +127,7 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     _ = try file.write(header_bytes.items);
     _ = try file.write(body_bytes.items);
 
-    _ = try file.write(&[_]u8{
-    	0x02, 0x19, 0x02,
-     	0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x00,
-     	0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x01
-    });
+    _ = try file.write(&[_]u8{ 0x02, 0x19, 0x02, 0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x00, 0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x01 });
 
     var functionSection: FunctionSection = .{
         .size = 0,
@@ -154,8 +135,8 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     };
     defer functionSection.types.deinit();
 
-    for(0..FnTable.table.items.len) |i| {
-    	try functionSection.types.append(@intCast(i + 2));
+    for (0..FnTable.table.items.len) |i| {
+        try functionSection.types.append(@intCast(i + 2));
     }
 
     var func_sec_header_bytes: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
@@ -164,7 +145,7 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     defer func_sec_body_bytes.deinit();
 
     try func_sec_body_bytes.append(@intCast(functionSection.types.items.len));
-    for(functionSection.types.items) |type_idx|{
+    for (functionSection.types.items) |type_idx| {
         try func_sec_body_bytes.append(@intCast(type_idx));
     }
 
@@ -177,35 +158,35 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     // export func hard coded
     //_ = try file.write(&[_]u8{0x07,0x08,0x01,0x04,0x6D,0x61,0x69,0x6E,0x00,0x01});
     // hard code start section
-    const main_idx:u8 = @intCast(try FnTable.getMainIdx(source, parser.ast));
-    _ = try file.write(&[_]u8{0x08, 0x01, main_idx + 2});
+    const main_idx: u8 = @intCast(try FnTable.getMainIdx(source, parser.ast));
+    _ = try file.write(&[_]u8{ 0x08, 0x01, main_idx + 2 });
 
     var code: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
     defer code.deinit();
 
-    for(FnTable.table.items) |fn_| {
-    	var fn_code = try generateWASM(parser, source, fn_, allocator);
-     	defer {
-      		fn_code.locals.deinit();
-        	fn_code.instructions.deinit();
+    for (FnTable.table.items) |fn_| {
+        var fn_code = try generateWASM(parser, source, fn_, allocator);
+        defer {
+            fn_code.locals.deinit();
+            fn_code.instructions.deinit();
         }
         var code_body_byte: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
         defer code_body_byte.deinit();
 
         try code_body_byte.append(@intCast(fn_code.locals.items.len));
-        for(fn_code.locals.items) |local| {
+        for (fn_code.locals.items) |local| {
             try code_body_byte.append(@intCast(local.locals));
             try code_body_byte.append(@intFromEnum(local.locals_type));
         }
 
-        for(fn_code.instructions.items) |inst| {
+        for (fn_code.instructions.items) |inst| {
             try code_body_byte.append(inst);
         }
-        const code_size:u8 = @intCast(code_body_byte.items.len);
+        const code_size: u8 = @intCast(code_body_byte.items.len);
 
         try code.append(code_size);
-        for(code_body_byte.items) |byte|{
-        	try code.append(byte);
+        for (code_body_byte.items) |byte| {
+            try code.append(byte);
         }
     }
 
@@ -222,7 +203,6 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     _ = try file.write(section_code_header_byte.items);
     _ = try file.write(section_code_body_byte.items);
     _ = try file.write(code.items);
-
 }
 
 fn generateWASM(parser: *Parser, source: []u8, fn_: FnSymbol, allocator: std.mem.Allocator) !Code {
@@ -239,17 +219,13 @@ fn generateWASM(parser: *Parser, source: []u8, fn_: FnSymbol, allocator: std.mem
 
     try bytecode.append(0x0B);
 
-    const code: Code = .{
-        .size = 0,
-        .locals = locals,
-        .instructions = bytecode
-    };
+    const code: Code = .{ .size = 0, .locals = locals, .instructions = bytecode };
     return code;
 }
 
 fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.ArrayList(Inst), lv: *VarTable) !void {
-	const left_exist = ast.nodes.items[node_idx].left != nan_u32;
-	const right_exist = ast.nodes.items[node_idx].right != nan_u32;
+    const left_exist = ast.nodes.items[node_idx].left != nan_u32;
+    const right_exist = ast.nodes.items[node_idx].right != nan_u32;
 
     if (left_exist) {
         try generateWASMCodeFromAst(ast, ast.nodes.items[node_idx].left, source, bytecode, lv);
@@ -261,37 +237,37 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
 
     switch (ast.nodes.items[node_idx].type) {
         .add => {
-        	const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
-         	switch(expr_type){
-         		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_add)),
-           		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_add)),
-             	.t_bool => unreachable,
-          	}
+            const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+            switch (expr_type) {
+                .t_int => try bytecode.append(@intFromEnum(OpCode.i32_add)),
+                .t_float => try bytecode.append(@intFromEnum(OpCode.f32_add)),
+                .t_bool => unreachable,
+            }
         },
         .sub => {
-        	const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
-         	switch(expr_type){
-         		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_sub)),
-           		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_sub)),
-             	.t_bool => unreachable,
-          	}
+            const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+            switch (expr_type) {
+                .t_int => try bytecode.append(@intFromEnum(OpCode.i32_sub)),
+                .t_float => try bytecode.append(@intFromEnum(OpCode.f32_sub)),
+                .t_bool => unreachable,
+            }
         },
         .mult => {
-        	const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
-         	switch(expr_type){
-         		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_mult)),
-           		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_mult)),
-             	.t_bool => unreachable,
-          	}
+            const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+            switch (expr_type) {
+                .t_int => try bytecode.append(@intFromEnum(OpCode.i32_mult)),
+                .t_float => try bytecode.append(@intFromEnum(OpCode.f32_mult)),
+                .t_bool => unreachable,
+            }
         },
         .div => {
-        	const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
-         	switch(expr_type){
-         		.t_int => try bytecode.append(@intFromEnum(OpCode.i32_div_s)),
-           		.t_float => try bytecode.append(@intFromEnum(OpCode.f32_div)),
-             	.t_bool => unreachable,
-          	}
-         },
+            const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
+            switch (expr_type) {
+                .t_int => try bytecode.append(@intFromEnum(OpCode.i32_div_s)),
+                .t_float => try bytecode.append(@intFromEnum(OpCode.f32_div)),
+                .t_bool => unreachable,
+            }
+        },
         .int_literal => {
             var int: i32 = 0;
             if (std.fmt.parseInt(i32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end], 10)) |out| {
@@ -305,9 +281,9 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
         .float_literal => {
             var float: f32 = 0.0;
             if (std.fmt.parseFloat(f32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end])) |out| {
-            	float = out;
+                float = out;
             } else |err| {
-            	std.debug.print("Error while parsing float literal: {any}\n", .{err});
+                std.debug.print("Error while parsing float literal: {any}\n", .{err});
             }
             try bytecode.append(@intFromEnum(OpCode.f32_const));
             // Bytes of float in little-endian (by IEEE 754 bit pattern)
@@ -318,41 +294,41 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             try bytecode.append(@truncate(float_byte));
         },
         .bool_literal => {
-           	try bytecode.append(@intFromEnum(OpCode.i32_const));
-            	if (source[ast.nodes.items[node_idx].loc.start] == 't') {
-             		try bytecode.append(0x01);
-            	} else {
-              		try bytecode.append(0x00);
-            	}
-            },
+            try bytecode.append(@intFromEnum(OpCode.i32_const));
+            if (source[ast.nodes.items[node_idx].loc.start] == 't') {
+                try bytecode.append(0x01);
+            } else {
+                try bytecode.append(0x00);
+            }
+        },
         .bool_not => {
             try bytecode.append(@intFromEnum(OpCode.i32_const));
-           	try bytecode.append(0x01);
+            try bytecode.append(0x01);
             try bytecode.append(@intFromEnum(OpCode.i32_xor));
         },
         .bool_and => try bytecode.append(@intFromEnum(OpCode.i32_and)),
         .bool_or => try bytecode.append(@intFromEnum(OpCode.i32_or)),
         .negate => {
-            if(left_exist){
-            	const left_node = ast.nodes.items[ast.nodes.items[node_idx].left];
-             	switch(left_node.type){
-                	.int_literal => {
-                    	// Multiply -1 with the value to get negative value
+            if (left_exist) {
+                const left_node = ast.nodes.items[ast.nodes.items[node_idx].left];
+                switch (left_node.type) {
+                    .int_literal => {
+                        // Multiply -1 with the value to get negative value
                         try bytecode.append(@intFromEnum(OpCode.i32_const));
                         try bytecode.append(0x7F); // -1 in LEB128
                         try bytecode.append(@intFromEnum(OpCode.i32_mult));
                     },
                     .float_literal => {
-                     	try bytecode.append(@intFromEnum(OpCode.f32_neg));
+                        try bytecode.append(@intFromEnum(OpCode.f32_neg));
                     },
                     .identifier => {
-                       	const symbol_type = SymbolTable.findByName(source[left_node.loc.start..left_node.loc.end]).?.type;
-                        switch(symbol_type){
-                          	.t_int => {
-                           		// Multiply -1 with the value to get negative value
-                             	try bytecode.append(@intFromEnum(OpCode.i32_const));
-                              	try bytecode.append(0x7F); // -1 in LEB128
-                               	try bytecode.append(@intFromEnum(OpCode.i32_mult));
+                        const symbol_type = SymbolTable.findByName(source[left_node.loc.start..left_node.loc.end]).?.type;
+                        switch (symbol_type) {
+                            .t_int => {
+                                // Multiply -1 with the value to get negative value
+                                try bytecode.append(@intFromEnum(OpCode.i32_const));
+                                try bytecode.append(0x7F); // -1 in LEB128
+                                try bytecode.append(@intFromEnum(OpCode.i32_mult));
                             },
                             .t_float => try bytecode.append(@intFromEnum(OpCode.f32_neg)),
                             .t_bool => unreachable,
@@ -360,28 +336,28 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                     },
                     .bool_literal => unreachable,
                     .add, .sub, .mult, .div => {
-                    	const expr_type = ExprTypeTable.table.items[left_node.idx].type;
-                     	switch(expr_type){
-                     	  	.t_int => {
-                     	   		// Multiply -1 with the value to get negative value
-                     	     	try bytecode.append(@intFromEnum(OpCode.i32_const));
-                     	      	try bytecode.append(0x7F); // -1 in LEB128
-                     	       	try bytecode.append(@intFromEnum(OpCode.i32_mult));
-                     	    },
-                     	    .t_float => try bytecode.append(@intFromEnum(OpCode.f32_neg)),
-                     	    .t_bool => unreachable,
-                     	}
+                        const expr_type = ExprTypeTable.table.items[left_node.idx].type;
+                        switch (expr_type) {
+                            .t_int => {
+                                // Multiply -1 with the value to get negative value
+                                try bytecode.append(@intFromEnum(OpCode.i32_const));
+                                try bytecode.append(0x7F); // -1 in LEB128
+                                try bytecode.append(@intFromEnum(OpCode.i32_mult));
+                            },
+                            .t_float => try bytecode.append(@intFromEnum(OpCode.f32_neg)),
+                            .t_bool => unreachable,
+                        }
                     },
-                    else => {}
+                    else => {},
                 }
             }
         },
-//      .greater => pool.emitBytecodeOp(.op_greater),
-//      .lesser => pool.emitBytecodeOp(.op_less),
-//      .greater_equal => pool.emitBytecodeOp(.op_greater_than),
-//      .lesser_equal => pool.emitBytecodeOp(.op_less_than),
-//      .equal_equal => pool.emitBytecodeOp(.op_equal),
-//      .not_equal => pool.emitBytecodeOp(.op_not_equal),
+        // .greater => pool.emitBytecodeOp(.op_greater),
+        // .lesser => pool.emitBytecodeOp(.op_less),
+        // .greater_equal => pool.emitBytecodeOp(.op_greater_than),
+        // .lesser_equal => pool.emitBytecodeOp(.op_less_than),
+        // .equal_equal => pool.emitBytecodeOp(.op_equal),
+        // .not_equal => pool.emitBytecodeOp(.op_not_equal),
         .identifier => {
             const name: []u8 = source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end];
             try bytecode.append(@intFromEnum(OpCode.local_get));
@@ -411,18 +387,18 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             const symbol_entry = SymbolTable.varTable.get(node.idx);
             try generateWASMCodeFromAst(ast, symbol_entry.expr_node, source, bytecode, lv);
             var value: VariableValue = undefined;
-            switch(symbol_entry.type){
+            switch (symbol_entry.type) {
                 .t_int => {
-                    value = .{.int = 0};
-                    try locals.append(.{.locals = 1, .locals_type = ValueType.i32});
+                    value = .{ .int = 0 };
+                    try locals.append(.{ .locals = 1, .locals_type = ValueType.i32 });
                 },
                 .t_float => {
-                    value = .{.float = 0.0};
-                    try locals.append(.{.locals = 1, .locals_type = ValueType.f32});
+                    value = .{ .float = 0.0 };
+                    try locals.append(.{ .locals = 1, .locals_type = ValueType.f32 });
                 },
                 .t_bool => {
-                    value = .{.boolean = false};
-                    try locals.append(.{.locals = 1, .locals_type = ValueType.i32});
+                    value = .{ .boolean = false };
+                    try locals.append(.{ .locals = 1, .locals_type = ValueType.i32 });
                 },
             }
             const index = try lv.add(symbol_entry.name, value);
@@ -433,24 +409,24 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
         .print_stmt => {
             const left_idx = ast.nodes.items[node_idx].left;
             try generateWASMCodeFromAst(ast, left_idx, source, bytecode, lv);
-           	const left_node = ast.nodes.items[left_idx];
+            const left_node = ast.nodes.items[left_idx];
             try bytecode.append(@intFromEnum(OpCode.call));
-            switch(left_node.type){
-               	.int_literal, .bool_literal => try bytecode.append(0x01),
+            switch (left_node.type) {
+                .int_literal, .bool_literal => try bytecode.append(0x01),
                 .float_literal => try bytecode.append(0x00),
                 .identifier => {
                     const symbol_type = SymbolTable.findByName(source[left_node.loc.start..left_node.loc.end]).?.type;
-                    switch(symbol_type){
+                    switch (symbol_type) {
                         .t_int, .t_bool => try bytecode.append(0x01),
                         .t_float => try bytecode.append(0x00),
                     }
                 },
                 else => {
-                	const expr_type = ExprTypeTable.table.items[left_node.idx].type;
-                 	switch(expr_type){
-                 	  	.t_int, .t_bool => try bytecode.append(0x01),
-                 	    .t_float => try bytecode.append(0x00),
-                 	}
+                    const expr_type = ExprTypeTable.table.items[left_node.idx].type;
+                    switch (expr_type) {
+                        .t_int, .t_bool => try bytecode.append(0x01),
+                        .t_float => try bytecode.append(0x00),
+                    }
                 },
             }
         },
@@ -464,14 +440,14 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             try bytecode.append(@intCast(lv.getByName(name)));
         },
         .fn_call => {
-        	const current_node_idx = ast.nodes.items[node_idx].idx;
-          	const function_idx = FnCallTable.table.items[current_node_idx].name_node;
-//           	const function_lit_node = ast.nodes.items[function_idx];
-          	const out_idx = try FnTable.getFunctionIdx(function_idx, source, ast.*);
-           try bytecode.append(@intFromEnum(OpCode.call));
-           try bytecode.append(@intCast(out_idx + 2));
-           std.debug.print("esist: {any}\n", .{out_idx + 2});
+            const current_node_idx = ast.nodes.items[node_idx].idx;
+            const function_idx = FnCallTable.table.items[current_node_idx].name_node;
+            // const function_lit_node = ast.nodes.items[function_idx];
+            const out_idx = try FnTable.getFunctionIdx(function_idx, source, ast.*);
+            try bytecode.append(@intFromEnum(OpCode.call));
+            try bytecode.append(@intCast(out_idx + 2));
+            std.debug.print("esist: {any}\n", .{out_idx + 2});
         },
-        else => {}
+        else => {},
     }
 }

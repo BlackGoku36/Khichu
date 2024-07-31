@@ -34,9 +34,9 @@ pub const VM = struct {
                 .op_return => {
                     // const value = vm.stack.pop();
                     // switch (value) {
-                        // .int => |val| std.debug.print("{d}\n", .{val}),
-                        // .float => |val| std.debug.print("{d}\n", .{val}),
-                        // .boolean => |val| std.debug.print("{any}\n", .{val}),
+                    // .int => |val| std.debug.print("{d}\n", .{val}),
+                    // .float => |val| std.debug.print("{d}\n", .{val}),
+                    // .boolean => |val| std.debug.print("{any}\n", .{val}),
                     // }
                     return;
                 },
@@ -190,7 +190,7 @@ pub const VM = struct {
                 .op_load_gv => {
                     var a = vm.stack.pop();
                     var key = vm.pool.global_var_tables.values.keys()[instruction.address];
-                    vm.pool.global_var_tables.values.put(key, a) catch |err|{
+                    vm.pool.global_var_tables.values.put(key, a) catch |err| {
                         std.debug.print("Unable to assign value to variable: {}", .{err});
                     };
                 },
@@ -205,7 +205,7 @@ pub const VM = struct {
                         .float => |val| std.debug.print("{d}\n", .{val}),
                         .boolean => |val| std.debug.print("{any}\n", .{val}),
                     }
-                }
+                },
             }
         }
     }

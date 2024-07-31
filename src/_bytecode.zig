@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const opCode = enum{
+pub const opCode = enum {
     op_return,
     op_constant,
     op_negate,
@@ -22,7 +22,7 @@ pub const opCode = enum{
     op_print,
 };
 
-pub const ByteCode = struct{
+pub const ByteCode = struct {
     op_code: opCode,
     address: u32,
 };
@@ -34,7 +34,7 @@ pub const Value = union(ValueType) {
     boolean: bool,
 };
 
-pub const GlobalVarTables = struct{
+pub const GlobalVarTables = struct {
     values: std.StringArrayHashMap(Value),
 
     pub fn init(allocator: std.mem.Allocator) GlobalVarTables {
@@ -45,7 +45,7 @@ pub const GlobalVarTables = struct{
 
     pub fn print(gv_table: *GlobalVarTables) void {
         var map_iter = gv_table.values.iterator();
-        while(map_iter.next()) |entry|{
+        while (map_iter.next()) |entry| {
             std.debug.print("key: {s}, ", .{entry.key_ptr.*});
             switch (entry.value_ptr.*) {
                 .int => |val| std.debug.print("value: {d}\n", .{val}),
@@ -80,13 +80,13 @@ pub const ByteCodePool = struct {
     }
 
     pub fn emitBytecodeOp(pool: *ByteCodePool, op_code: opCode) void {
-        pool.bytecodes.append(.{.op_code = op_code, .address = std.math.nan_u32}) catch |err| {
+        pool.bytecodes.append(.{ .op_code = op_code, .address = std.math.nan_u32 }) catch |err| {
             std.debug.print("Error while adding to bytecodes: {any}\n", .{err});
         };
     }
 
     pub fn emitBytecodeAdd(pool: *ByteCodePool, op_code: opCode, address: u32) void {
-        pool.bytecodes.append(.{.op_code = op_code, .address = address}) catch |err| {
+        pool.bytecodes.append(.{ .op_code = op_code, .address = address }) catch |err| {
             std.debug.print("Error while adding to bytecodes: {any}\n", .{err});
         };
     }
@@ -184,7 +184,7 @@ pub const ByteCodePool = struct {
                 .op_print => {
                     std.debug.print("op_print\n", .{});
                     offset += 1;
-                }
+                },
             }
         }
     }

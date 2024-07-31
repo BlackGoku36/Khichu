@@ -63,7 +63,7 @@ pub const Type = enum {
             .print_stmt => return "print_stmt",
             .assign_stmt => return "assign_stmt",
             .fn_block => return "fn_block",
-            .fn_call => return "fn_call"
+            .fn_call => return "fn_call",
         }
     }
 };
@@ -102,7 +102,7 @@ pub const Ast = struct {
     }
 
     pub fn setNodeIdx(ast: *Ast, atIndex: usize, index: usize) void {
-    	ast.nodes.items[atIndex].idx = index;
+        ast.nodes.items[atIndex].idx = index;
     }
 
     pub fn addNode(ast: *Ast, node_type: Type, idx: usize, left: u32, right: u32, loc: LocInfo) u32 {
@@ -113,7 +113,7 @@ pub const Ast = struct {
         return node_idx;
     }
 
-    pub fn addUnaryNode(ast: *Ast, node_type: Type, idx:usize, left: u32, loc: LocInfo) u32 {
+    pub fn addUnaryNode(ast: *Ast, node_type: Type, idx: usize, left: u32, loc: LocInfo) u32 {
         return ast.addNode(node_type, idx, left, nan_u32, loc);
     }
 
@@ -131,11 +131,11 @@ pub const Ast = struct {
         }
 
         if (left == 1) {
-            std.debug.print("{s} (left) (self_idx: {d}) (out_idx: {d})\n", .{ast.nodes.items[node].type.str(), node, ast.nodes.items[node].idx});
+            std.debug.print("{s} (left) (self_idx: {d}) (out_idx: {d})\n", .{ ast.nodes.items[node].type.str(), node, ast.nodes.items[node].idx });
         } else if (left == 2) {
-            std.debug.print("{s} (right) (self_idx: {d}) (out_idx: {d})\n", .{ast.nodes.items[node].type.str(), node, ast.nodes.items[node].idx});
+            std.debug.print("{s} (right) (self_idx: {d}) (out_idx: {d})\n", .{ ast.nodes.items[node].type.str(), node, ast.nodes.items[node].idx });
         } else {
-            std.debug.print("{s} (root) (self_idx: {d}) (out_idx: {d})\n", .{ast.nodes.items[node].type.str(), node, ast.nodes.items[node].idx});
+            std.debug.print("{s} (root) (self_idx: {d}) (out_idx: {d})\n", .{ ast.nodes.items[node].type.str(), node, ast.nodes.items[node].idx });
         }
 
         if (ast.nodes.items[node].left != nan_u32) {

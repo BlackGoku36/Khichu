@@ -26,7 +26,7 @@ fn generateCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePo
             } else |err| {
                 std.debug.print("Error while parsing int literal: {any}\n", .{err});
             }
-            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{.int = int}));
+            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{ .int = int }));
         },
         .float_literal => {
             var float: f32 = 0.0;
@@ -35,7 +35,7 @@ fn generateCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePo
             } else |err| {
                 std.debug.print("Error while parsing float literal: {any}\n", .{err});
             }
-            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{.float = float}));
+            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{ .float = float }));
         },
         .bool_literal => {
             var boolean: bool = false;
@@ -44,7 +44,7 @@ fn generateCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePo
             } else {
                 boolean = false;
             }
-            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{.boolean = boolean}));
+            pool.emitBytecodeAdd(.op_constant, pool.addConstant(.{ .boolean = boolean }));
         },
         .bool_not => pool.emitBytecodeOp(.op_not),
         .bool_and => pool.emitBytecodeOp(.op_and),
@@ -83,18 +83,18 @@ pub fn generateCode(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePool)
             const symbol_entry = SymbolTable.varTable.get(node.symbol_idx);
             generateCodeFromAst(ast, symbol_entry.expr_node, source, pool);
             var value: Value = undefined;
-            switch(symbol_entry.type){
+            switch (symbol_entry.type) {
                 .t_int => {
-                    value = .{.int = 0};
+                    value = .{ .int = 0 };
                 },
                 .t_float => {
-                    value = .{.float = 0.0};
+                    value = .{ .float = 0.0 };
                 },
                 .t_bool => {
-                    value = .{.boolean = false};
+                    value = .{ .boolean = false };
                 },
             }
-            pool.global_var_tables.values.put(symbol_entry.name, value) catch |err|{
+            pool.global_var_tables.values.put(symbol_entry.name, value) catch |err| {
                 std.debug.print("Unable to create global variable entry: {}", .{err});
             };
             pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(symbol_entry.name).?));
@@ -112,7 +112,7 @@ pub fn generateCode(ast: *Ast, node_idx: u32, source: []u8, pool: *ByteCodePool)
             // TODO: Add check for identifier not declared
             pool.emitBytecodeAdd(.op_load_gv, @intCast(pool.global_var_tables.values.getIndex(name).?));
         },
-        else => {}
+        else => {},
     }
     // pool.emitBytecodeOp(.op_return);
 }

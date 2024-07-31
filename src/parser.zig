@@ -77,7 +77,7 @@ pub const Parser = struct {
             const bool_lit = parser.peekPrev();
             return parser.ast.addLiteralNode(.bool_literal, nan_u32, bool_lit.loc);
         }
-        if(parser.match(.identifier)){
+        if (parser.match(.identifier)) {
             const ident = parser.peekPrev();
             return parser.ast.addLiteralNode(.identifier, nan_u32, ident.loc);
         }
@@ -182,16 +182,12 @@ pub const Parser = struct {
     fn assignment(parser: *Parser) u32 {
         const ident_idx = parser.logical();
         const ident_node = parser.ast.nodes.items[ident_idx];
-        if(parser.match(.equal)){
-            if(ident_node.type != .identifier){
-                parser.reportError(ident_node.loc, "Expected 'identifier' before '=', found '{s}'.\n", .{ ident_node.type.str()}, true);
+        if (parser.match(.equal)) {
+            if (ident_node.type != .identifier) {
+                parser.reportError(ident_node.loc, "Expected 'identifier' before '=', found '{s}'.\n", .{ident_node.type.str()}, true);
             }
             const expr_node = parser.assignment();
-            const loc: LocInfo = .{
-                .start = ident_node.loc.start,
-                .end = parser.peekPrev().loc.end,
-                .line = ident_node.loc.line
-            };
+            const loc: LocInfo = .{ .start = ident_node.loc.start, .end = parser.peekPrev().loc.end, .line = ident_node.loc.line };
             return parser.ast.addNode(.assign_stmt, nan_u32, ident_idx, expr_node, loc);
         }
         return ident_idx;
@@ -203,8 +199,8 @@ pub const Parser = struct {
 
     fn expressionStatement(parser: *Parser) u32 {
         const expr = parser.expression();
-        if(!parser.match(.semi_colon)){
-            parser.reportError(parser.peekPrev().loc, "Expected ';' after 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        if (!parser.match(.semi_colon)) {
+            parser.reportError(parser.peekPrev().loc, "Expected ';' after 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         return expr;
     }
@@ -212,144 +208,140 @@ pub const Parser = struct {
     //TODO: check if this can be cleaned up
     fn varStatement(parser: *Parser) u32 {
         const var_token = parser.consume(); //Consume 'var' token
-        if(!parser.match(.identifier)){
-            parser.reportError(var_token.loc, "Expected identifier after 'var', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        if (!parser.match(.identifier)) {
+            parser.reportError(var_token.loc, "Expected identifier after 'var', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
 
         const ident = parser.peekPrev();
 
         const var_exist = SymbolTable.exists(parser.source[ident.loc.start..ident.loc.end]);
-        if(var_exist){
+        if (var_exist) {
             parser.reportError(ident.loc, "Variable named '{s}' already exists.\n", .{parser.source[ident.loc.start..ident.loc.end]}, true);
         }
 
         if (!parser.match(.colon)) {
-            parser.reportError(parser.peekPrev().loc, "Expected ':' after 'identifier' and before 'type', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+            parser.reportError(parser.peekPrev().loc, "Expected ':' after 'identifier' and before 'type', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
 
         const type_token = parser.consume();
-        if(type_token.type != .int_type and type_token.type != .float_type and type_token.type != .bool_type){
-            parser.reportError(type_token.loc, "Expected 'type' after ':' and before '=', found '{s}'.\n", .{ type_token.type.str()}, true);
+        if (type_token.type != .int_type and type_token.type != .float_type and type_token.type != .bool_type) {
+            parser.reportError(type_token.loc, "Expected 'type' after ':' and before '=', found '{s}'.\n", .{type_token.type.str()}, true);
         }
 
-        if(!parser.match(.equal)){
-            parser.reportError(parser.peekPrev().loc, "Expected '=' after 'type' and before 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        if (!parser.match(.equal)) {
+            parser.reportError(parser.peekPrev().loc, "Expected '=' after 'type' and before 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
 
         const expr_node = parser.expressionStatement();
 
-        var symbol_type:SymbolType = undefined;
-        switch(type_token.type){
+        var symbol_type: SymbolType = undefined;
+        switch (type_token.type) {
             .int_type => symbol_type = .t_int,
             .float_type => symbol_type = .t_float,
             .bool_type => symbol_type = .t_bool,
             else => unreachable,
         }
 
-        const symbol_idx = SymbolTable.appendVar(.{
-            .name = parser.source[ident.loc.start..ident.loc.end],
-            .type = symbol_type,
-            .expr_node = expr_node
-        });
+        const symbol_idx = SymbolTable.appendVar(.{ .name = parser.source[ident.loc.start..ident.loc.end], .type = symbol_type, .expr_node = expr_node });
 
-        const loc: LocInfo = .{.start = var_token.loc.start, .end = parser.peekPrev().loc.end, .line = var_token.loc.line};
+        const loc: LocInfo = .{ .start = var_token.loc.start, .end = parser.peekPrev().loc.end, .line = var_token.loc.line };
         return parser.ast.addLiteralNode(.var_stmt, symbol_idx, loc);
     }
 
     fn printStatement(parser: *Parser) u32 {
         const print_token = parser.consume();
-        if(!parser.match(.left_paren)){
-            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        if (!parser.match(.left_paren)) {
+            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         const expr_node = parser.expression();
-        if(!parser.match(.right_paren)){
-            parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        if (!parser.match(.right_paren)) {
+            parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
-        if(!parser.match(.semi_colon)){
-            parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        if (!parser.match(.semi_colon)) {
+            parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
-        const loc: LocInfo = .{.start = print_token.loc.start, .end = parser.peekPrev().loc.end, .line = print_token.loc.line};
+        const loc: LocInfo = .{ .start = print_token.loc.start, .end = parser.peekPrev().loc.end, .line = print_token.loc.line };
         return parser.ast.addUnaryNode(.print_stmt, nan_u32, expr_node, loc);
     }
 
     pub fn block(parser: *Parser) void {
-    	if(!parser.match(.left_brace)){
-	    	parser.reportError(parser.peekPrev().loc, "Expected '{{' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
-    	}
-        while((parser.peek().type != .right_brace) and (parser.peek().type != .eof)){
+        if (!parser.match(.left_brace)) {
+            parser.reportError(parser.peekPrev().loc, "Expected '{{' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
+        }
+        while ((parser.peek().type != .right_brace) and (parser.peek().type != .eof)) {
             switch (parser.peek().type) {
                 .@"var" => {
-                    parser.ast_roots.append(parser.varStatement()) catch |err|{
+                    parser.ast_roots.append(parser.varStatement()) catch |err| {
                         std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
                     };
                 },
                 .print => {
-                    parser.ast_roots.append(parser.printStatement()) catch |err|{
+                    parser.ast_roots.append(parser.printStatement()) catch |err| {
                         std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
                     };
                 },
                 else => {
-                	const current = parser.token_pool.items[parser.current];
-                	const next = parser.token_pool.items[parser.current + 1];
-                	if(current.type == .identifier and next.type == .left_paren){
-               			parser.ast_roots.append(parser.functionCall()) catch |err|{
-               			    std.debug.print("Unable to append function call statement ast node to root list: {}", .{err});
-               			};
-                 	}else{
-                   		parser.ast_roots.append(parser.expressionStatement()) catch |err|{
-                   		    std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
-                   		};
+                    const current = parser.token_pool.items[parser.current];
+                    const next = parser.token_pool.items[parser.current + 1];
+                    if (current.type == .identifier and next.type == .left_paren) {
+                        parser.ast_roots.append(parser.functionCall()) catch |err| {
+                            std.debug.print("Unable to append function call statement ast node to root list: {}", .{err});
+                        };
+                    } else {
+                        parser.ast_roots.append(parser.expressionStatement()) catch |err| {
+                            std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
+                        };
                     }
-                }
+                },
             }
         }
-        if(!parser.match(.right_brace)){
-            parser.reportError(parser.peekPrev().loc, "Expected '}}' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        if (!parser.match(.right_brace)) {
+            parser.reportError(parser.peekPrev().loc, "Expected '}}' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
     }
 
     fn functionCall(parser: *Parser) u32 {
-    	const function_name_token = parser.consume();
-    	if(!parser.match(.left_paren)){
-    	    parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
-    	}
-//    	const expr_node = parser.expression();
-    	if(!parser.match(.right_paren)){
-    	    parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
-    	}
-    	if(!parser.match(.semi_colon)){
-    	    parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
-    	}
-    	const fn_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, function_name_token.loc);
-     	const fn_idx = FnCallTable.appendFunction(.{.name_node = fn_name_node});
-    	const loc: LocInfo = .{.start = function_name_token.loc.start, .end = parser.peekPrev().loc.end, .line = function_name_token.loc.line};
-    	return parser.ast.addLiteralNode(.fn_call, fn_idx, loc);
+        const function_name_token = parser.consume();
+        if (!parser.match(.left_paren)) {
+            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
+        }
+        //    	const expr_node = parser.expression();
+        if (!parser.match(.right_paren)) {
+            parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
+        }
+        if (!parser.match(.semi_colon)) {
+            parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
+        }
+        const fn_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, function_name_token.loc);
+        const fn_idx = FnCallTable.appendFunction(.{ .name_node = fn_name_node });
+        const loc: LocInfo = .{ .start = function_name_token.loc.start, .end = parser.peekPrev().loc.end, .line = function_name_token.loc.line };
+        return parser.ast.addLiteralNode(.fn_call, fn_idx, loc);
     }
 
     fn functionBlock(parser: *Parser) u32 {
-    	const fn_token = parser.consume();
-     	const fn_name_token = parser.consume();
-      	if(fn_name_token.type != .identifier){
-         	parser.reportError(parser.peekPrev().loc, "Expected name of function after 'fn', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
-       	}
-        if(!parser.match(.left_paren)){
-            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        const fn_token = parser.consume();
+        const fn_name_token = parser.consume();
+        if (fn_name_token.type != .identifier) {
+            parser.reportError(parser.peekPrev().loc, "Expected name of function after 'fn', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
+        }
+        if (!parser.match(.left_paren)) {
+            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         const fn_right_paren = parser.peek();
-        if(!parser.match(.right_paren)){
-            parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        if (!parser.match(.right_paren)) {
+            parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         const start = parser.ast_roots.items.len;
         parser.block();
         const end = parser.ast_roots.items.len;
         const fn_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, fn_name_token.loc);
-        const fn_idx = FnTable.appendFunction(.{.name_node = fn_name_node, .body_nodes_start = start, .body_nodes_end = end});
-        const loc: LocInfo = .{.start = fn_token.loc.start, .end = fn_right_paren.loc.end, .line = fn_token.loc.line};
+        const fn_idx = FnTable.appendFunction(.{ .name_node = fn_name_node, .body_nodes_start = start, .body_nodes_end = end });
+        const loc: LocInfo = .{ .start = fn_token.loc.start, .end = fn_right_paren.loc.end, .line = fn_token.loc.line };
         return parser.ast.addLiteralNode(.fn_block, fn_idx, loc);
     }
 
     fn reportError(parser: *Parser, loc: LocInfo, comptime str: []const u8, args: anytype, exit: bool) void {
-        std.debug.print("{s}:{d}: ", .{ parser.source_name, loc.line + 1});
+        std.debug.print("{s}:{d}: ", .{ parser.source_name, loc.line + 1 });
         std.debug.print(str, args);
 
         var error_line_offset: u32 = 0;
@@ -380,98 +372,102 @@ pub const Parser = struct {
     }
 
     pub fn analyse_type_semantic(parser: *Parser, curr_node: u32) void {
-    	var node = &parser.ast.nodes.items[curr_node];
-		const left_exist = node.left != nan_u32;
-		const right_exist = node.right != nan_u32;
+        var node = &parser.ast.nodes.items[curr_node];
+        const left_exist = node.left != nan_u32;
+        const right_exist = node.right != nan_u32;
 
-    	if (left_exist) {
-   		     parser.analyse_type_semantic(node.left);
-    	}
-    	if (right_exist) {
-   		     parser.analyse_type_semantic(node.right);
-    	}
+        if (left_exist) {
+            parser.analyse_type_semantic(node.left);
+        }
+        if (right_exist) {
+            parser.analyse_type_semantic(node.right);
+        }
 
-     	// TODO: I forgot why I keep checking left/right exist for operations?
-     	switch(node.type){
-      		.add, .sub, .mult, .div, .bool_not, .bool_and, .bool_or => {
-        		if(left_exist and right_exist){
-          			var left_type: SymbolType = undefined;
-          			var right_type: SymbolType = undefined;
-             		const left_node: Node = parser.ast.nodes.items[node.left];
-             		const right_node: Node = parser.ast.nodes.items[node.right];
-               		switch(left_node.type){
-                 		.identifier => {
-                 			const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
-                			if(SymbolTable.findByName(name)) | sym |{
-                 				left_type = sym.type;
-                 			}else{
-                   				unreachable;
-                   			}
-                   		},
-                     	.int_literal => left_type = .t_int,
-                      	.float_literal => left_type = .t_float,
-                       	.bool_literal => left_type = .t_bool,
-                       	.add, .sub, .mult, .div, .negate, .bool_not, .bool_and, .bool_or => {
-                        	left_type = ExprTypeTable.table.items[left_node.idx].type;
+        // TODO: I forgot why I keep checking left/right exist for operations?
+        switch (node.type) {
+            .add, .sub, .mult, .div, .bool_not, .bool_and, .bool_or => {
+                if (left_exist and right_exist) {
+                    var left_type: SymbolType = undefined;
+                    var right_type: SymbolType = undefined;
+                    const left_node: Node = parser.ast.nodes.items[node.left];
+                    const right_node: Node = parser.ast.nodes.items[node.right];
+                    switch (left_node.type) {
+                        .identifier => {
+                            const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
+                            if (SymbolTable.findByName(name)) |sym| {
+                                left_type = sym.type;
+                            } else {
+                                unreachable;
+                            }
                         },
-                        else => {unreachable;},
-                 	}
-                  	switch(right_node.type){
-                  		.identifier => {
-                  			const name: []u8 = parser.source[right_node.loc.start..right_node.loc.end];
-                 			if(SymbolTable.findByName(name)) | sym |{
-                  				right_type = sym.type;
-                  			}else{
-                     			unreachable;
-                        	}
-                       	},
-                     	.int_literal => right_type = .t_int,
-                      	.float_literal => right_type = .t_float,
-                       	.bool_literal => right_type = .t_bool,
+                        .int_literal => left_type = .t_int,
+                        .float_literal => left_type = .t_float,
+                        .bool_literal => left_type = .t_bool,
                         .add, .sub, .mult, .div, .negate, .bool_not, .bool_and, .bool_or => {
-                         	right_type = ExprTypeTable.table.items[right_node.idx].type;
+                            left_type = ExprTypeTable.table.items[left_node.idx].type;
                         },
-                        else =>{unreachable;},
-                  	}
-                  	if(left_type != right_type){
-                   		parser.reportError(node.loc, "Types miss-match between '{s}' and '{s}'\n", .{ left_type.str(), right_type.str() }, false);
-                   		parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_type.str()}, false);
-                   		parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_type.str()}, true);
-                   	}
+                        else => {
+                            unreachable;
+                        },
+                    }
+                    switch (right_node.type) {
+                        .identifier => {
+                            const name: []u8 = parser.source[right_node.loc.start..right_node.loc.end];
+                            if (SymbolTable.findByName(name)) |sym| {
+                                right_type = sym.type;
+                            } else {
+                                unreachable;
+                            }
+                        },
+                        .int_literal => right_type = .t_int,
+                        .float_literal => right_type = .t_float,
+                        .bool_literal => right_type = .t_bool,
+                        .add, .sub, .mult, .div, .negate, .bool_not, .bool_and, .bool_or => {
+                            right_type = ExprTypeTable.table.items[right_node.idx].type;
+                        },
+                        else => {
+                            unreachable;
+                        },
+                    }
+                    if (left_type != right_type) {
+                        parser.reportError(node.loc, "Types miss-match between '{s}' and '{s}'\n", .{ left_type.str(), right_type.str() }, false);
+                        parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_type.str()}, false);
+                        parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_type.str()}, true);
+                    }
                     node.idx = ExprTypeTable.appendExprType(left_type);
-          		}else if(left_exist and !right_exist){
-            		@panic("TODO!");
-            	}else if(right_exist and !left_exist){
-             		@panic("TODO!");
-             	}
-        	},
-         	.negate => {
-          		// TODO: Remove this code duplication
-          		if(left_exist){
-         			var left_type: SymbolType = undefined;
-            		const left_node: Node = parser.ast.nodes.items[node.left];
-              		switch(left_node.type){
-                		.identifier => {
-                			const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
-                			if(SymbolTable.findByName(name)) | sym |{
-                				left_type = sym.type;
-                			}else{
-                  				unreachable;
-                  			}
-                  		},
-                    	.int_literal => left_type = .t_int,
-                     	.float_literal => left_type = .t_float,
-                      	.bool_literal => unreachable,
-                      	.add, .sub, .mult, .div => {
-                       		left_type = ExprTypeTable.table.items[left_node.idx].type;
+                } else if (left_exist and !right_exist) {
+                    @panic("TODO!");
+                } else if (right_exist and !left_exist) {
+                    @panic("TODO!");
+                }
+            },
+            .negate => {
+                // TODO: Remove this code duplication
+                if (left_exist) {
+                    var left_type: SymbolType = undefined;
+                    const left_node: Node = parser.ast.nodes.items[node.left];
+                    switch (left_node.type) {
+                        .identifier => {
+                            const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
+                            if (SymbolTable.findByName(name)) |sym| {
+                                left_type = sym.type;
+                            } else {
+                                unreachable;
+                            }
+                        },
+                        .int_literal => left_type = .t_int,
+                        .float_literal => left_type = .t_float,
+                        .bool_literal => unreachable,
+                        .add, .sub, .mult, .div => {
+                            left_type = ExprTypeTable.table.items[left_node.idx].type;
                         },
                         else => unreachable,
-                	}
-                 	node.idx = ExprTypeTable.appendExprType(left_type);
-            	}
-          	},
-         	else => {}
-      	}
+                    }
+                    node.idx = ExprTypeTable.appendExprType(left_type);
+                }
+            },
+            else => {},
+        }
     }
 
     // TODO: Doesn't properly handle identifiers and stuffs
@@ -603,31 +599,31 @@ pub const Parser = struct {
     }
 
     pub fn parse(parser: *Parser) void {
-        while(parser.peek().type != .eof){
+        while (parser.peek().type != .eof) {
             switch (parser.peek().type) {
                 .@"var" => {
-//                    parser.ast_roots.append(parser.varStatement()) catch |err|{
-//                        std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
-//                    };
-						unreachable;
+                    //                    parser.ast_roots.append(parser.varStatement()) catch |err|{
+                    //                        std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
+                    //                    };
+                    unreachable;
                 },
                 .print => {
-//                    parser.ast_roots.append(parser.printStatement()) catch |err|{
-//                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
-//                    };
-					unreachable;
+                    //                    parser.ast_roots.append(parser.printStatement()) catch |err|{
+                    //                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
+                    //                    };
+                    unreachable;
                 },
                 .@"fn" => {
-                	parser.ast_roots.append(parser.functionBlock()) catch |err|{
-                	    std.debug.print("Unable to append function block ast node to root list: {}", .{err});
-                	};
+                    parser.ast_roots.append(parser.functionBlock()) catch |err| {
+                        std.debug.print("Unable to append function block ast node to root list: {}", .{err});
+                    };
                 },
                 else => {
-                unreachable;
-//                    parser.ast_roots.append(parser.expressionStatement()) catch |err|{
-//                        std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
-//                    };
-                }
+                    unreachable;
+                    //                    parser.ast_roots.append(parser.expressionStatement()) catch |err|{
+                    //                        std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
+                    //                    };
+                },
             }
         }
     }
@@ -636,27 +632,27 @@ pub const Parser = struct {
         // Analyze
         for (parser.ast_roots.items) |root_idx| {
             const ast_node = parser.ast.nodes.items[root_idx];
-            switch(ast_node.type){
+            switch (ast_node.type) {
                 .var_stmt => {
                     const symbol_idx = ast_node.idx;
                     const symbol_entry = SymbolTable.varTable.get(symbol_idx);
-//                    parser.analyse_bool(symbol_entry.expr_node);
-//                    _ = parser.analyse_chain_type(symbol_entry.expr_node);
+                    //                    parser.analyse_bool(symbol_entry.expr_node);
+                    //                    _ = parser.analyse_chain_type(symbol_entry.expr_node);
                     parser.analyse_type_semantic(symbol_entry.expr_node);
                 },
                 .print_stmt => {
                     const left_idx = ast_node.left;
-//                    parser.analyse_bool(left_idx);
-//                    _ = parser.analyse_chain_type(left_idx);
+                    //                    parser.analyse_bool(left_idx);
+                    //                    _ = parser.analyse_chain_type(left_idx);
                     parser.analyse_type_semantic(left_idx);
                 },
                 .assign_stmt => {
                     const right_idx = ast_node.right;
-//                    parser.analyse_bool(right_idx);
-//                    _ = parser.analyse_chain_type(right_idx);
+                    //                    parser.analyse_bool(right_idx);
+                    //                    _ = parser.analyse_chain_type(right_idx);
                     parser.analyse_type_semantic(right_idx);
                 },
-                else => {}
+                else => {},
             }
         }
     }

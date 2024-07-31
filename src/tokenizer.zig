@@ -83,7 +83,7 @@ pub const TokenType = enum {
         }
     }
 
-    pub fn reservedStr(token_type: TokenType) []const u8{
+    pub fn reservedStr(token_type: TokenType) []const u8 {
         switch (token_type) {
             .@"var" => return "var",
             .print => return "print",
@@ -151,7 +151,7 @@ pub const Tokenizer = struct {
     }
 
     fn parseIdentifier(tokenizer: *Tokenizer) TokenType {
-        const reserved = [_]TokenType{ .true, .false, .@"var", .print, .int_type, .float_type, .bool_type, .@"fn"};
+        const reserved = [_]TokenType{ .true, .false, .@"var", .print, .int_type, .float_type, .bool_type, .@"fn" };
 
         var out_token_type: TokenType = .identifier;
 
@@ -193,10 +193,10 @@ pub const Tokenizer = struct {
                     tokenizer.add_token(.star);
                 },
                 '/' => {
-                    if(tokenizer.match('/')){
-                        while(tokenizer.current < tokenizer.source.len and tokenizer.consume() != '\n'){}
+                    if (tokenizer.match('/')) {
+                        while (tokenizer.current < tokenizer.source.len and tokenizer.consume() != '\n') {}
                         tokenizer.line += 1;
-                    }else{
+                    } else {
                         tokenizer.add_token(.slash);
                     }
                 },

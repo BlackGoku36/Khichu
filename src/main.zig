@@ -15,7 +15,6 @@ pub fn main() !void {
     var allocator = gp.allocator();
     defer _ = gp.deinit();
 
-
     const source_name = "demo.k";
 
     var file = try std.fs.cwd().openFile(source_name, .{});
@@ -46,11 +45,11 @@ pub fn main() !void {
     for (parser.ast_roots.items) |roots| {
         parser.ast.print(roots, 0, 0);
     }
-//    parser.analyze();
-//    std.debug.print("\n------ NEW AST ------\n", .{});
-//    for (parser.ast_roots.items) |roots| {
-//        parser.ast.print(roots, 0, 0);
-//    }
+    //    parser.analyze();
+    //    std.debug.print("\n------ NEW AST ------\n", .{});
+    //    for (parser.ast_roots.items) |roots| {
+    //        parser.ast.print(roots, 0, 0);
+    //    }
 
     std.debug.print("\n------ SYMBOL TABLE (VAR)------\n", .{});
     SymbolTable.printVar();
@@ -69,26 +68,26 @@ pub fn main() !void {
 
     try wasm_codegen.outputFile(out_file, &parser, source, allocator);
 
-//    var bytecode_pool = ByteCodePool.init(allocator);
-//    defer bytecode_pool.deinit();
-//
-//    for (parser.ast_roots.items) |roots| {
-//        codegen.generateCode(&parser.ast, roots, source, &bytecode_pool);
-//    }
-//
-//    std.debug.print("\n------ BYTECODE ------\n", .{});
-//    bytecode_pool.print();
-//
-	ExprTypeTable.destroyTable();
+    //    var bytecode_pool = ByteCodePool.init(allocator);
+    //    defer bytecode_pool.deinit();
+    //
+    //    for (parser.ast_roots.items) |roots| {
+    //        codegen.generateCode(&parser.ast, roots, source, &bytecode_pool);
+    //    }
+    //
+    //    std.debug.print("\n------ BYTECODE ------\n", .{});
+    //    bytecode_pool.print();
+    //
+    ExprTypeTable.destroyTable();
     SymbolTable.destroyTables();
     FnTable.destroyTable();
     FnCallTable.destroyTable();
-//
-//    var vm = VM.init(allocator, bytecode_pool);
-//    defer vm.deinit();
-//    std.debug.print("\n------ VM ------\n", .{});
-//    try vm.run();
-//
-//    std.debug.print("\n------ GLOBAL VAR TABLE ------\n", .{});
-//    bytecode_pool.global_var_tables.print();
+    //
+    //    var vm = VM.init(allocator, bytecode_pool);
+    //    defer vm.deinit();
+    //    std.debug.print("\n------ VM ------\n", .{});
+    //    try vm.run();
+    //
+    //    std.debug.print("\n------ GLOBAL VAR TABLE ------\n", .{});
+    //    bytecode_pool.global_var_tables.print();
 }
