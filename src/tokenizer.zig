@@ -27,6 +27,8 @@ pub const TokenType = enum {
     lesser,
     left_paren,
     right_paren,
+    left_brace,
+    right_brace,
     colon,
     semi_colon,
     true,
@@ -38,6 +40,7 @@ pub const TokenType = enum {
     int_type,
     float_type,
     bool_type,
+    @"fn",
     eof,
 
     pub fn str(token_type: TokenType) []const u8 {
@@ -62,6 +65,8 @@ pub const TokenType = enum {
             .lesser => return "lesser",
             .left_paren => return "left_paren",
             .right_paren => return "right_paren",
+            .left_brace => return "left_brace",
+            .right_brace => return "right_brace",
             .colon => return "colon",
             .semi_colon => return "semi_colon",
             .true => return "true",
@@ -73,6 +78,7 @@ pub const TokenType = enum {
             .int_type => return "int_type",
             .float_type => return "float_type",
             .bool_type => return "bool_type",
+            .@"fn" => return "fn",
             .eof => return "eof",
         }
     }
@@ -86,6 +92,7 @@ pub const TokenType = enum {
             .bool_type => return "bool",
             .true => return "true",
             .false => return "false",
+            .@"fn" => return "fn",
             else => {
                 return "";
             },
@@ -144,7 +151,7 @@ pub const Tokenizer = struct {
     }
 
     fn parseIdentifier(tokenizer: *Tokenizer) TokenType {
-        const reserved = [_]TokenType{ .true, .false, .@"var", .print, .int_type, .float_type, .bool_type};
+        const reserved = [_]TokenType{ .true, .false, .@"var", .print, .int_type, .float_type, .bool_type, .@"fn"};
 
         var out_token_type: TokenType = .identifier;
 
@@ -219,6 +226,8 @@ pub const Tokenizer = struct {
                 },
                 '(' => tokenizer.add_token(.left_paren),
                 ')' => tokenizer.add_token(.right_paren),
+                '{' => tokenizer.add_token(.left_brace),
+                '}' => tokenizer.add_token(.right_brace),
                 ':' => tokenizer.add_token(.colon),
                 ';' => tokenizer.add_token(.semi_colon),
                 ' ' => {},

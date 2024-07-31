@@ -3,6 +3,9 @@ const Ast = @import("../ast.zig").Ast;
 const tables = @import("../tables.zig");
 const SymbolTable = tables.SymbolTable;
 const ExprTypeTable = tables.ExprTypeTable;
+const FnTable = tables.FnTable;
+const FnSymbol = tables.FnSymbol;
+const FnCallTable = tables.FnCallTable;
 const Parser = @import("../parser.zig").Parser;
 
 const wasm = @import("wasm.zig");
@@ -95,10 +98,12 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
        .params = std.ArrayList(u8).init(allocator),
        .results = std.ArrayList(u8).init(allocator)
     });
-    try sectionType.func_type.append(.{
-       .params = std.ArrayList(u8).init(allocator),
-       .results = std.ArrayList(u8).init(allocator)
-    });
+    for(0..FnTable.table.items.len) |_| {
+    	try sectionType.func_type.append(.{
+       		.params = std.ArrayList(u8).init(allocator),
+         	.results = std.ArrayList(u8).init(allocator)
+        });
+    }
     defer {
         for(sectionType.func_type.items) |sec| {
             sec.params.deinit();
@@ -106,8 +111,8 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
         }
     }
     // TODO: Remove this hard coding someday
-    try sectionType.func_type.items[1].params.append(@intFromEnum(ValueType.f32));
-    try sectionType.func_type.items[2].params.append(@intFromEnum(ValueType.i32));
+    try sectionType.func_type.items[0].params.append(@intFromEnum(ValueType.f32));
+    try sectionType.func_type.items[1].params.append(@intFromEnum(ValueType.i32));
 
     var header_bytes: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
     defer header_bytes.deinit();
@@ -137,8 +142,8 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
 
     _ = try file.write(&[_]u8{
     	0x02, 0x19, 0x02,
-     	0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x01,
-     	0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x02
+     	0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x00,
+     	0x03, 0x73, 0x74, 0x64, 0x05, 0x70, 0x72, 0x69, 0x6E, 0x74, 0x00, 0x01
     });
 
     var functionSection: FunctionSection = .{
@@ -146,7 +151,10 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
         .types = std.ArrayList(u32).init(allocator),
     };
     defer functionSection.types.deinit();
-    try functionSection.types.append(0);
+
+    for(0..FnTable.table.items.len) |i| {
+    	try functionSection.types.append(@intCast(i + 2));
+    }
 
     var func_sec_header_bytes: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
     defer func_sec_header_bytes.deinit();
@@ -167,44 +175,55 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     // export func hard coded
     //_ = try file.write(&[_]u8{0x07,0x08,0x01,0x04,0x6D,0x61,0x69,0x6E,0x00,0x01});
     // hard code start section
-    _ = try file.write(&[_]u8{0x08,0x01,0x02});
+    const main_idx:u8 = @intCast(try FnTable.getMainIdx(source, parser.ast));
+    _ = try file.write(&[_]u8{0x08, 0x01, main_idx + 2});
 
-    var code = try generateWASM(parser, source, allocator);
-    defer {
-        code.locals.deinit();
-        code.instructions.deinit();
+    var code: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
+    defer code.deinit();
+
+    for(FnTable.table.items) |fn_| {
+    	var fn_code = try generateWASM(parser, source, fn_, allocator);
+     	defer {
+      		fn_code.locals.deinit();
+        	fn_code.instructions.deinit();
+        }
+        var code_body_byte: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
+        defer code_body_byte.deinit();
+
+        try code_body_byte.append(@intCast(fn_code.locals.items.len));
+        for(fn_code.locals.items) |local| {
+            try code_body_byte.append(@intCast(local.locals));
+            try code_body_byte.append(@intFromEnum(local.locals_type));
+        }
+
+        for(fn_code.instructions.items) |inst| {
+            try code_body_byte.append(inst);
+        }
+        const code_size:u8 = @intCast(code_body_byte.items.len);
+
+        try code.append(code_size);
+        for(code_body_byte.items) |byte|{
+        	try code.append(byte);
+        }
     }
 
     var section_code_header_byte: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
     defer section_code_header_byte.deinit();
     var section_code_body_byte: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
     defer section_code_body_byte.deinit();
-    var function_code_body_byte: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
-    defer function_code_body_byte.deinit();
 
-    try function_code_body_byte.append(@intCast(code.locals.items.len));
-    for(code.locals.items) |local| {
-        try function_code_body_byte.append(@intCast(local.locals));
-        try function_code_body_byte.append(@intFromEnum(local.locals_type));
-    }
-
-    for(code.instructions.items) |inst| {
-        try function_code_body_byte.append(inst);
-    }
-
-    try section_code_body_byte.append(0x01);
-    try section_code_body_byte.append(@intCast(function_code_body_byte.items.len));
+    try section_code_body_byte.append(@intCast(FnTable.table.items.len));
 
     try section_code_header_byte.append(0x0A);
-    try section_code_header_byte.append(@intCast(section_code_body_byte.items.len + function_code_body_byte.items.len));
+    try section_code_header_byte.append(@intCast(section_code_body_byte.items.len + code.items.len));
 
     _ = try file.write(section_code_header_byte.items);
     _ = try file.write(section_code_body_byte.items);
-    _ = try file.write(function_code_body_byte.items);
+    _ = try file.write(code.items);
 
 }
 
-fn generateWASM(parser: *Parser, source: []u8, allocator: std.mem.Allocator) !Code {
+fn generateWASM(parser: *Parser, source: []u8, fn_: FnSymbol, allocator: std.mem.Allocator) !Code {
 
     // Local Variables table
     var lv = VarTable.init(allocator);
@@ -212,8 +231,7 @@ fn generateWASM(parser: *Parser, source: []u8, allocator: std.mem.Allocator) !Co
 
     var bytecode: std.ArrayList(Inst) = std.ArrayList(Inst).init(allocator);
     var locals: std.ArrayList(Local) = std.ArrayList(Local).init(allocator);
-
-    for (parser.ast_roots.items) |roots| {
+    for (parser.ast_roots.items[fn_.body_nodes_start..fn_.body_nodes_end]) |roots| {
         try generateWASMCode(&parser.ast, roots, source, &bytecode, &locals, &lv);
     }
 
@@ -442,6 +460,15 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             // TODO: Add check for identifier not declared
             try bytecode.append(@intFromEnum(OpCode.local_set));
             try bytecode.append(@intCast(lv.getByName(name)));
+        },
+        .fn_call => {
+        	const current_node_idx = ast.nodes.items[node_idx].idx;
+          	const function_idx = FnCallTable.table.items[current_node_idx].name_node;
+//           	const function_lit_node = ast.nodes.items[function_idx];
+          	const out_idx = try FnTable.getFunctionIdx(function_idx, source, ast.*);
+           try bytecode.append(@intFromEnum(OpCode.call));
+           try bytecode.append(@intCast(out_idx + 2));
+           std.debug.print("esist: {any}\n", .{out_idx + 2});
         },
         else => {}
     }

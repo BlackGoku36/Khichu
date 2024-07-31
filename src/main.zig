@@ -4,6 +4,8 @@ const Parser = @import("parser.zig").Parser;
 const tables = @import("tables.zig");
 const SymbolTable = tables.SymbolTable;
 const ExprTypeTable = tables.ExprTypeTable;
+const FnTable = tables.FnTable;
+const FnCallTable = tables.FnCallTable;
 
 const wasm_codegen = @import("wasm/codegen.zig");
 
@@ -33,6 +35,8 @@ pub fn main() !void {
 
     SymbolTable.createTables(allocator);
     ExprTypeTable.createTable(allocator);
+    FnTable.createTable(allocator);
+    FnCallTable.createTable(allocator);
 
     var parser = Parser.init(allocator, tokenizer);
     defer parser.deinit();
@@ -42,17 +46,23 @@ pub fn main() !void {
     for (parser.ast_roots.items) |roots| {
         parser.ast.print(roots, 0, 0);
     }
-    parser.analyze();
-    std.debug.print("\n------ NEW AST ------\n", .{});
-    for (parser.ast_roots.items) |roots| {
-        parser.ast.print(roots, 0, 0);
-    }
+//    parser.analyze();
+//    std.debug.print("\n------ NEW AST ------\n", .{});
+//    for (parser.ast_roots.items) |roots| {
+//        parser.ast.print(roots, 0, 0);
+//    }
 
     std.debug.print("\n------ SYMBOL TABLE (VAR)------\n", .{});
     SymbolTable.printVar();
 
     std.debug.print("\n------ EXPR TYPE TABLE -------\n", .{});
     ExprTypeTable.printExprTypes();
+
+    std.debug.print("\n------ FN TABLE -------\n", .{});
+    FnTable.printFunctions(source, parser.ast);
+
+    std.debug.print("\n------ FN CALL TABLE -------\n", .{});
+    FnCallTable.printFunctions(source, parser.ast);
 
     var out_file = try std.fs.cwd().createFile("out.wasm", .{});
     defer out_file.close();
@@ -71,6 +81,8 @@ pub fn main() !void {
 //
 	ExprTypeTable.destroyTable();
     SymbolTable.destroyTables();
+    FnTable.destroyTable();
+    FnCallTable.destroyTable();
 //
 //    var vm = VM.init(allocator, bytecode_pool);
 //    defer vm.deinit();

@@ -11,6 +11,8 @@ const tables = @import("tables.zig");
 const SymbolTable = tables.SymbolTable;
 const SymbolType = tables.Type;
 const ExprTypeTable = tables.ExprTypeTable;
+const FnTable = tables.FnTable;
+const FnCallTable = tables.FnCallTable;
 
 const nan_u32 = std.math.nan_u32;
 
@@ -268,6 +270,82 @@ pub const Parser = struct {
         }
         const loc: LocInfo = .{.start = print_token.loc.start, .end = parser.peekPrev().loc.end, .line = print_token.loc.line};
         return parser.ast.addUnaryNode(.print_stmt, std.math.nan_u32, expr_node, loc);
+    }
+
+    pub fn block(parser: *Parser) void {
+    	if(!parser.match(.left_brace)){
+	    	parser.reportError(parser.peekPrev().loc, "Expected '{{' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+    	}
+        while((parser.peek().type != .right_brace) and (parser.peek().type != .eof)){
+            switch (parser.peek().type) {
+                .@"var" => {
+                    parser.ast_roots.append(parser.varStatement()) catch |err|{
+                        std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
+                    };
+                },
+                .print => {
+                    parser.ast_roots.append(parser.printStatement()) catch |err|{
+                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
+                    };
+                },
+                else => {
+                	const current = parser.token_pool.items[parser.current];
+                	const next = parser.token_pool.items[parser.current + 1];
+                	if(current.type == .identifier and next.type == .left_paren){
+               			parser.ast_roots.append(parser.functionCall()) catch |err|{
+               			    std.debug.print("Unable to append function call statement ast node to root list: {}", .{err});
+               			};
+                 	}else{
+                   		parser.ast_roots.append(parser.expressionStatement()) catch |err|{
+                   		    std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
+                   		};
+                    }
+                }
+            }
+        }
+        if(!parser.match(.right_brace)){
+            parser.reportError(parser.peekPrev().loc, "Expected '}}' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        }
+    }
+
+    fn functionCall(parser: *Parser) u32 {
+    	const function_name_token = parser.consume();
+    	if(!parser.match(.left_paren)){
+    	    parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+    	}
+//    	const expr_node = parser.expression();
+    	if(!parser.match(.right_paren)){
+    	    parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+    	}
+    	if(!parser.match(.semi_colon)){
+    	    parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+    	}
+    	const fn_name_node = parser.ast.addLiteralNode(.identifier, std.math.nan_u32, function_name_token.loc);
+     	const fn_idx = FnCallTable.appendFunction(.{.name_node = fn_name_node});
+    	const loc: LocInfo = .{.start = function_name_token.loc.start, .end = parser.peekPrev().loc.end, .line = function_name_token.loc.line};
+    	return parser.ast.addLiteralNode(.fn_call, fn_idx, loc);
+    }
+
+    fn functionBlock(parser: *Parser) u32 {
+    	const fn_token = parser.consume();
+     	const fn_name_token = parser.consume();
+      	if(fn_name_token.type != .identifier){
+         	parser.reportError(parser.peekPrev().loc, "Expected name of function after 'fn', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+       	}
+        if(!parser.match(.left_paren)){
+            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        }
+        const fn_right_paren = parser.peek();
+        if(!parser.match(.right_paren)){
+            parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{ parser.peekPrev().type.str()}, true);
+        }
+        const start = parser.ast_roots.items.len;
+        parser.block();
+        const end = parser.ast_roots.items.len;
+        const fn_name_node = parser.ast.addLiteralNode(.identifier, std.math.nan_u32, fn_name_token.loc);
+        const fn_idx = FnTable.appendFunction(.{.name_node = fn_name_node, .body_nodes_start = start, .body_nodes_end = end});
+        const loc: LocInfo = .{.start = fn_token.loc.start, .end = fn_right_paren.loc.end, .line = fn_token.loc.line};
+        return parser.ast.addLiteralNode(.fn_block, fn_idx, loc);
     }
 
     fn reportError(parser: *Parser, loc: LocInfo, comptime str: []const u8, args: anytype, exit: bool) void {
@@ -528,19 +606,27 @@ pub const Parser = struct {
         while(parser.peek().type != .eof){
             switch (parser.peek().type) {
                 .@"var" => {
-                    parser.ast_roots.append(parser.varStatement()) catch |err|{
-                        std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
-                    };
+//                    parser.ast_roots.append(parser.varStatement()) catch |err|{
+//                        std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
+//                    };
+						unreachable;
                 },
                 .print => {
-                    parser.ast_roots.append(parser.printStatement()) catch |err|{
-                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
-                    };
+//                    parser.ast_roots.append(parser.printStatement()) catch |err|{
+//                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
+//                    };
+					unreachable;
+                },
+                .@"fn" => {
+                	parser.ast_roots.append(parser.functionBlock()) catch |err|{
+                	    std.debug.print("Unable to append function block ast node to root list: {}", .{err});
+                	};
                 },
                 else => {
-                    parser.ast_roots.append(parser.expressionStatement()) catch |err|{
-                        std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
-                    };
+                unreachable;
+//                    parser.ast_roots.append(parser.expressionStatement()) catch |err|{
+//                        std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
+//                    };
                 }
             }
         }

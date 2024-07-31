@@ -23,6 +23,8 @@ pub const Type = enum {
     var_stmt,
     print_stmt,
     assign_stmt,
+    fn_block,
+    fn_call,
 
     pub fn strType(ast_type: Type) []const u8 {
         switch (ast_type) {
@@ -57,7 +59,9 @@ pub const Type = enum {
             .identifier => return "identifier",
             .var_stmt => return "var_stmt",
             .print_stmt => return "print_stmt",
-            .assign_stmt => return "assign_stmt"
+            .assign_stmt => return "assign_stmt",
+            .fn_block => return "fn_block",
+            .fn_call => return "fn_call"
         }
     }
 };
