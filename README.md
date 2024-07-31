@@ -16,7 +16,6 @@
     - Disallow variable shadowing.
     - Disallow changing type on assignment to same variable (if var is float, then it is legal right now to assign bool to it, but it should be illegal).
 - Minor refactor:
-    - Separate analyzer from parser file.
     - Code is bit stinky
 - What should be better error message?
 ```
@@ -57,5 +56,16 @@ x: float = 8.2 + 2.1 / 3.8;
 Write the code in `test.ul` and do:
 
 ```
+# Zig 0.13
 zig build run
 ```
+
+## Plan
+
+1. Be able to parse all the basics feature a programming language can have. (functions, arrays, loops, etc)
+2. Write WASM code gen for it
+3. Design custom IR
+4. Use this IR to codegen WASM code
+5. Design register-based VM and it's bytecode.
+6. Do optimization on custom IR to produce efficient builds.
+7. Maybe do RISC-V codegen
