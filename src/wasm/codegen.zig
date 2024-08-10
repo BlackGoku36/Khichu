@@ -111,29 +111,21 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     defer body_bytes.deinit();
     const body_bytes_writer = body_bytes.writer();
 
-    //try body_bytes.append(@intCast(sectionType.func_type.items.len));
     try leb.writeULEB128(body_bytes_writer, sectionType.func_type.items.len);
 
     for (sectionType.func_type.items) |fns| {
         try leb.writeULEB128(body_bytes_writer, fns.id);
         try leb.writeULEB128(body_bytes_writer, fns.params.items.len);
-        //try body_bytes.append(fns.id);
-        //try body_bytes.append(@intCast(fns.params.items.len));
         for (fns.params.items) |param| {
             try leb.writeULEB128(body_bytes_writer, param);
-            //try body_bytes.append(param);
         }
         try leb.writeULEB128(body_bytes_writer, fns.results.items.len);
-        //try body_bytes.append(@intCast(fns.results.items.len));
         for (fns.results.items) |result| {
             try leb.writeULEB128(body_bytes_writer, result);
-            //            try body_bytes.append(result);
         }
     }
     try leb.writeULEB128(header_bytes_writer, sectionType.id);
     try leb.writeULEB128(header_bytes_writer, body_bytes.items.len);
-    //    try header_bytes.append(sectionType.id);
-    //    try header_bytes.append(@intCast(body_bytes.items.len));
 
     _ = try file.write(header_bytes.items);
     _ = try file.write(body_bytes.items);
@@ -144,11 +136,9 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
         .size = 0,
         .types = std.ArrayList(u32).init(allocator),
     };
-    //const function_section_types_writer = functionSection.types.writer();
     defer functionSection.types.deinit();
 
     for (0..FnTable.table.items.len) |i| {
-        //try leb.writeULEB128(function_section_types_writer, i + 2);
         try functionSection.types.append(@intCast(i + 2));
     }
 
@@ -160,17 +150,13 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     defer func_sec_body_bytes.deinit();
     const func_sec_body_bytes_writer = func_sec_body_bytes.writer();
 
-    //try func_sec_body_bytes.append(@intCast(functionSection.types.items.len));
     try leb.writeULEB128(func_sec_body_bytes_writer, functionSection.types.items.len);
     for (functionSection.types.items) |type_idx| {
         try leb.writeULEB128(func_sec_body_bytes_writer, type_idx);
-        //try func_sec_body_bytes.append(@intCast(type_idx));
     }
 
     try leb.writeULEB128(func_sec_header_bytes_writer, functionSection.id);
     try leb.writeULEB128(func_sec_header_bytes_writer, func_sec_body_bytes.items.len);
-    //try func_sec_header_bytes.append(functionSection.id);
-    //try func_sec_header_bytes.append(@intCast(func_sec_body_bytes.items.len));
 
     _ = try file.write(func_sec_header_bytes.items);
     _ = try file.write(func_sec_body_bytes.items);
@@ -178,9 +164,7 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     // export func hard coded
     //_ = try file.write(&[_]u8{0x07,0x08,0x01,0x04,0x6D,0x61,0x69,0x6E,0x00,0x01});
     // hard code start section
-    //const main_idx: u8 = @intCast(try FnTable.getMainIdx(source, parser.ast));
     const main_idx: u32 = try FnTable.getMainIdx(source, parser.ast);
-    //_ = try file.write(&[_]u8{ 0x08, 0x01, main_idx + 2 });
     _ = try file.write(&[_]u8{ 0x08, 0x01 });
     try leb.writeULEB128(file.writer(), main_idx + 2);
 
@@ -198,21 +182,16 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
         defer code_body_byte.deinit();
         const code_body_byte_writer = code_body_byte.writer();
 
-        //try code_body_byte.append(@intCast(fn_code.locals.items.len));
         try leb.writeULEB128(code_body_byte_writer, fn_code.locals.items.len);
         for (fn_code.locals.items) |local| {
             try leb.writeULEB128(code_body_byte_writer, local.locals);
             try leb.writeULEB128(code_body_byte_writer, @intFromEnum(local.locals_type));
-            //try code_body_byte.append(@intCast(local.locals));
-            //try code_body_byte.append(@intFromEnum(local.locals_type));
         }
 
         for (fn_code.instructions.items) |inst| {
             try code_body_byte.append(inst);
         }
-        //const code_size: u8 = @intCast(code_body_byte.items.len);
 
-        //try code.append(code_size);
         try leb.writeULEB128(code_writer, code_body_byte.items.len);
         for (code_body_byte.items) |byte| {
             try code.append(byte);
@@ -227,12 +206,9 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     defer section_code_body_byte.deinit();
     const section_code_body_byte_writer = section_code_body_byte.writer();
 
-    //try section_code_body_byte.append(@intCast(FnTable.table.items.len));
     try leb.writeULEB128(section_code_body_byte_writer, FnTable.table.items.len);
 
     try section_code_header_byte.append(0x0A);
-//    try section_code_header_byte.append(@intCast(section_code_body_byte.items.len + code.items.len));
-//    try leb.writeULEB128(section_code_header_byte_writer, 0x0A);
     try leb.writeULEB128(section_code_header_byte_writer, section_code_body_byte.items.len + code.items.len);
 
     _ = try file.write(section_code_header_byte.items);
@@ -276,32 +252,32 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
         .add => {
             const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
             switch (expr_type) {
-                .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_add)),//try bytecode.append(@intFromEnum(OpCode.i32_add)),
-                .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_add)),//try bytecode.append(@intFromEnum(OpCode.f32_add)),
+                .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_add)),
+                .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_add)),
                 .t_bool => unreachable,
             }
         },
         .sub => {
             const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
             switch (expr_type) {
-                .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_sub)),//try bytecode.append(@intFromEnum(OpCode.i32_sub)),
-                .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_sub)),//try bytecode.append(@intFromEnum(OpCode.f32_sub)),
+                .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_sub)),
+                .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_sub)),
                 .t_bool => unreachable,
             }
         },
         .mult => {
             const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
             switch (expr_type) {
-                .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult)),//try bytecode.append(@intFromEnum(OpCode.i32_mult)),
-                .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_mult)),//try bytecode.append(@intFromEnum(OpCode.f32_mult)),
+                .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult)),
+                .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_mult)),
                 .t_bool => unreachable,
             }
         },
         .div => {
             const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
             switch (expr_type) {
-                .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_div_s)),//try bytecode.append(@intFromEnum(OpCode.i32_div_s)),
-                .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_div)),//try bytecode.append(@intFromEnum(OpCode.f32_div)),
+                .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_div_s)),
+                .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_div)),
                 .t_bool => unreachable,
             }
         },
@@ -314,8 +290,6 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             }
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
             try leb.writeILEB128(bytecode_writer, int);
-            //try bytecode.append(@intFromEnum(OpCode.i32_const));
-            //try bytecode.append(@intCast(int));
         },
         .float_literal => {
             var float: f32 = 0.0;
@@ -324,7 +298,6 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             } else |err| {
                 std.debug.print("Error while parsing float literal: {any}\n", .{err});
             }
-            //try bytecode.append(@intFromEnum(OpCode.f32_const));
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_const));
             // Bytes of float in little-endian (by IEEE 754 bit pattern)
             const float_byte: u32 = @byteSwap(@as(u32, @bitCast(float)));
@@ -335,7 +308,6 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
         },
         .bool_literal => {
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
-            //try bytecode.append(@intFromEnum(OpCode.i32_const));
             if (source[ast.nodes.items[node_idx].loc.start] == 't') {
                 try bytecode.append(0x01);
             } else {
@@ -344,28 +316,23 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
         },
         .bool_not => {
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
-            //try bytecode.append(@intFromEnum(OpCode.i32_const));
             try bytecode.append(0x01);
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_xor));
-            //try bytecode.append(@intFromEnum(OpCode.i32_xor));
         },
-        .bool_and => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_and)), // try bytecode.append(@intFromEnum(OpCode.i32_and)),
-        .bool_or => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_or)), // try bytecode.append(@intFromEnum(OpCode.i32_or)),
+        .bool_and => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_and)),
+        .bool_or => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_or)),
         .negate => {
             if (left_exist) {
                 const left_node = ast.nodes.items[ast.nodes.items[node_idx].left];
                 switch (left_node.type) {
                     .int_literal => {
                         // Multiply -1 with the value to get negative value
-                        //try bytecode.append(@intFromEnum(OpCode.i32_const));
                         try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
                         try bytecode.append(0x7F); // -1 in LEB128
                         try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult));
-                        //try bytecode.append(@intFromEnum(OpCode.i32_mult));
                     },
                     .float_literal => {
                         try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_neg));
-                        //try bytecode.append(@intFromEnum(OpCode.f32_neg));
                     },
                     .identifier => {
                         const symbol_type = SymbolTable.findByName(source[left_node.loc.start..left_node.loc.end]).?.type;
@@ -373,12 +340,10 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                             .t_int => {
                                 // Multiply -1 with the value to get negative value
                                 try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
-                                //try bytecode.append(@intFromEnum(OpCode.i32_const));
                                 try bytecode.append(0x7F); // -1 in LEB128
                                 try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult));
-                                //try bytecode.append(@intFromEnum(OpCode.i32_mult));
                             },
-                            .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_neg)), //try bytecode.append(@intFromEnum(OpCode.f32_neg)),
+                            .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_neg)),
                             .t_bool => unreachable,
                         }
                     },
@@ -389,12 +354,10 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                             .t_int => {
                                 // Multiply -1 with the value to get negative value
                                 try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
-                                //try bytecode.append(@intFromEnum(OpCode.i32_const));
                                 try bytecode.append(0x7F); // -1 in LEB128
                                 try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult));
-                                //try bytecode.append(@intFromEnum(OpCode.i32_mult));
                             },
-                            .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_neg)), //try bytecode.append(@intFromEnum(OpCode.f32_neg)),
+                            .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_neg)),
                             .t_bool => unreachable,
                         }
                     },
@@ -412,8 +375,6 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             const name: []u8 = source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end];
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.local_get));
             try leb.writeULEB128(bytecode_writer, lv.getByName(name));
-            //try bytecode.append(@intFromEnum(OpCode.local_get));
-            //try bytecode.append(@intCast(lv.getByName(name)));
             // TODO: Add check for identifier not declared
         },
         .assign_stmt => {
@@ -425,8 +386,6 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.local_set));
             try leb.writeULEB128(bytecode_writer, lv.getByName(name));
-            //try bytecode.append(@intFromEnum(OpCode.local_set));
-            //try bytecode.append(@intCast(lv.getByName(name)));
         },
         else => {},
     }
@@ -463,8 +422,6 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.local_set));
             try leb.writeULEB128(bytecode_writer, index);
 
-            //try bytecode.append(@intFromEnum(OpCode.local_set));
-            //try bytecode.append(@intCast(index));
         },
         .print_stmt => {
             const left_idx = ast.nodes.items[node_idx].left;
@@ -472,7 +429,6 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             const left_node = ast.nodes.items[left_idx];
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));
-            //try bytecode.append(@intFromEnum(OpCode.call));
             
             switch (left_node.type) {
                 .int_literal, .bool_literal => try bytecode.append(0x01),
@@ -502,8 +458,6 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.local_set));
             try leb.writeULEB128(bytecode_writer, lv.getByName(name));
-            //try bytecode.append(@intFromEnum(OpCode.local_set));
-            //try bytecode.append(@intCast(lv.getByName(name)));
         },
         .fn_call => {
             const current_node_idx = ast.nodes.items[node_idx].idx;
@@ -513,9 +467,6 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));
             try leb.writeULEB128(bytecode_writer, out_idx + 2);
-            //try bytecode.append(@intFromEnum(OpCode.call));
-            //try bytecode.append(@intCast(out_idx + 2));
-            std.debug.print("esist: {any}\n", .{out_idx + 2});
         },
         else => {},
     }
