@@ -8,6 +8,7 @@ const ExprTypeTable = tables.ExprTypeTable;
 const FnTable = tables.FnTable;
 const FnSymbol = tables.FnSymbol;
 const FnCallTable = tables.FnCallTable;
+const FnSymbolType = tables.Type;
 const Parser = @import("../parser.zig").Parser;
 
 const wasm = @import("wasm.zig");
@@ -102,6 +103,21 @@ pub fn outputFile(file: std.fs.File, parser: *Parser, source: []u8, allocator: s
     // TODO: Remove this hard coding someday
     try sectionType.func_type.items[0].params.append(@intFromEnum(ValueType.f32));
     try sectionType.func_type.items[1].params.append(@intFromEnum(ValueType.i32));
+
+    for (0..FnTable.table.items.len) |i| {
+        const fns = FnTable.table.items[i];
+        if (fns.return_type != .t_void) {
+            var value_type: ValueType = undefined;
+            switch (fns.return_type) {
+                .t_int => value_type = .i32,
+                .t_float => value_type = .f32,
+                .t_bool => value_type = .i32,
+                else => unreachable,
+            }
+            std.debug.print("section type: {d}\n", .{i + 2});
+            try sectionType.func_type.items[i + 2].results.append(@intFromEnum(value_type));
+        }
+    }
 
     var header_bytes: std.ArrayList(u8) = std.ArrayList(u8).init(allocator);
     defer header_bytes.deinit();
@@ -254,7 +270,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             switch (expr_type) {
                 .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_add)),
                 .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_add)),
-                .t_bool => unreachable,
+                .t_bool, .t_void => unreachable,
             }
         },
         .sub => {
@@ -262,7 +278,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             switch (expr_type) {
                 .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_sub)),
                 .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_sub)),
-                .t_bool => unreachable,
+                .t_bool, .t_void => unreachable,
             }
         },
         .mult => {
@@ -270,7 +286,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             switch (expr_type) {
                 .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult)),
                 .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_mult)),
-                .t_bool => unreachable,
+                .t_bool, .t_void => unreachable,
             }
         },
         .div => {
@@ -278,7 +294,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             switch (expr_type) {
                 .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_div_s)),
                 .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_div)),
-                .t_bool => unreachable,
+                .t_bool, .t_void => unreachable,
             }
         },
         .int_literal => {
@@ -344,7 +360,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                                 try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult));
                             },
                             .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_neg)),
-                            .t_bool => unreachable,
+                            .t_bool, .t_void => unreachable,
                         }
                     },
                     .bool_literal => unreachable,
@@ -358,7 +374,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                                 try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult));
                             },
                             .t_float => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_neg)),
-                            .t_bool => unreachable,
+                            .t_bool, .t_void => unreachable,
                         }
                     },
                     else => {},
@@ -386,6 +402,15 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.local_set));
             try leb.writeULEB128(bytecode_writer, lv.getByName(name));
+        },
+        .fn_call => {
+            const current_node_idx = ast.nodes.items[node_idx].idx;
+            const function_idx = FnCallTable.table.items[current_node_idx].name_node;
+            // const function_lit_node = ast.nodes.items[function_idx];
+            const out_idx = try FnTable.getFunctionIdx(function_idx, source, ast.*);
+
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));
+            try leb.writeULEB128(bytecode_writer, out_idx + 2);
         },
         else => {},
     }
@@ -416,12 +441,12 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
                     value = .{ .boolean = false };
                     try locals.append(.{ .locals = 1, .locals_type = ValueType.i32 });
                 },
+                .t_void => unreachable,
             }
             const index = try lv.add(symbol_entry.name, value);
-            
+
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.local_set));
             try leb.writeULEB128(bytecode_writer, index);
-
         },
         .print_stmt => {
             const left_idx = ast.nodes.items[node_idx].left;
@@ -429,7 +454,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             const left_node = ast.nodes.items[left_idx];
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));
-            
+
             switch (left_node.type) {
                 .int_literal, .bool_literal => try bytecode.append(0x01),
                 .float_literal => try bytecode.append(0x00),
@@ -438,6 +463,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
                     switch (symbol_type) {
                         .t_int, .t_bool => try bytecode.append(0x01),
                         .t_float => try bytecode.append(0x00),
+                        .t_void => unreachable,
                     }
                 },
                 else => {
@@ -445,6 +471,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
                     switch (expr_type) {
                         .t_int, .t_bool => try bytecode.append(0x01),
                         .t_float => try bytecode.append(0x00),
+                        .t_void => unreachable,
                     }
                 },
             }
@@ -467,6 +494,11 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));
             try leb.writeULEB128(bytecode_writer, out_idx + 2);
+        },
+        .fn_return => {
+            const left = ast.nodes.items[node_idx].left;
+            try generateWASMCodeFromAst(ast, left, source, bytecode, lv);
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.@"return"));
         },
         else => {},
     }

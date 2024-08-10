@@ -1,18 +1,24 @@
-fn foo(){
-	var x: bool = true;
-	print(x);
+fn main() void {
+	var y: float = 2.0;
+    print(y);
+	y = bar();
+    print(y);
+    var x: bool = foo();
+    print(x);
+    taz();
 }
 
-fn main(){
-	var y: bool = false;
-	y = true;
-	print(y);
-	foo();
-	bar();
-}
-
-fn bar(){
+fn bar() float {
 	var z: float = 5.0;
 	print(z);
-//	print(z/2.0); this doesn't work (give false negative) ;(
+    return z;
+}
+
+fn foo() bool {
+    return true;
+}
+
+fn taz() void {
+    var po: int = 39;
+    print(po);
 }

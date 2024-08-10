@@ -5,12 +5,14 @@ pub const Type = enum {
     t_int,
     t_float,
     t_bool,
+    t_void,
 
     pub fn str(var_type: Type) []const u8 {
         switch (var_type) {
             .t_int => return "t_int",
             .t_float => return "t_float",
             .t_bool => return "t_bool",
+            .t_void => return "t_void",
         }
     }
 };
@@ -130,6 +132,7 @@ pub const FnCallTable = struct {
 
 pub const FnSymbol = struct {
     name_node: usize,
+    return_type: Type,
     body_nodes_start: usize,
     body_nodes_end: usize,
 };

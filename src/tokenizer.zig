@@ -41,6 +41,8 @@ pub const TokenType = enum {
     float_type,
     bool_type,
     @"fn",
+    void_type,
+    @"return",
     eof,
 
     pub fn str(token_type: TokenType) []const u8 {
@@ -79,6 +81,8 @@ pub const TokenType = enum {
             .float_type => return "float_type",
             .bool_type => return "bool_type",
             .@"fn" => return "fn",
+            .void_type => return "void_type",
+            .@"return" => return "return",
             .eof => return "eof",
         }
     }
@@ -93,6 +97,8 @@ pub const TokenType = enum {
             .true => return "true",
             .false => return "false",
             .@"fn" => return "fn",
+            .void_type => return "void",
+            .@"return" => return "return",
             else => {
                 return "";
             },
@@ -151,7 +157,7 @@ pub const Tokenizer = struct {
     }
 
     fn parseIdentifier(tokenizer: *Tokenizer) TokenType {
-        const reserved = [_]TokenType{ .true, .false, .@"var", .print, .int_type, .float_type, .bool_type, .@"fn" };
+        const reserved = [_]TokenType{ .true, .false, .@"var", .print, .int_type, .float_type, .bool_type, .@"fn", .void_type, .@"return" };
 
         var out_token_type: TokenType = .identifier;
 

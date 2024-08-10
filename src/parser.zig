@@ -93,6 +93,19 @@ pub const Parser = struct {
         return nan_u32;
     }
 
+    fn call(parser: *Parser) u32 {
+        var expr = parser.primary();
+        const fn_name_token = parser.peekPrev();
+        if (parser.match(.left_paren)) {
+            if (!parser.match(.right_paren)) parser.reportError(fn_name_token.loc, "Expected ')' after expression\n", .{}, true);
+            const fn_name_node = expr;
+            const fn_idx = FnCallTable.appendFunction(.{ .name_node = fn_name_node });
+            const loc: LocInfo = .{ .start = fn_name_token.loc.start, .end = parser.peekPrev().loc.end, .line = fn_name_token.loc.line };
+            expr = parser.ast.addLiteralNode(.fn_call, fn_idx, loc);
+        }
+        return expr;
+    }
+
     fn unary(parser: *Parser) u32 {
         if (parser.match(.minus)) {
             const minus = parser.peekPrev();
@@ -114,7 +127,7 @@ pub const Parser = struct {
             };
             return parser.ast.addUnaryNode(.bool_not, nan_u32, node, loc);
         }
-        return parser.primary();
+        return parser.call();
     }
 
     fn factor(parser: *Parser) u32 {
@@ -280,18 +293,19 @@ pub const Parser = struct {
                         std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
                     };
                 },
+                .@"return" => {
+                    parser.ast_roots.append(parser.functionReturn()) catch |err| {
+                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
+                    };
+                },
                 else => {
                     const current = parser.token_pool.items[parser.current];
+                    _ = current;
                     const next = parser.token_pool.items[parser.current + 1];
-                    if (current.type == .identifier and next.type == .left_paren) {
-                        parser.ast_roots.append(parser.functionCall()) catch |err| {
-                            std.debug.print("Unable to append function call statement ast node to root list: {}", .{err});
-                        };
-                    } else {
-                        parser.ast_roots.append(parser.expressionStatement()) catch |err| {
-                            std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
-                        };
-                    }
+                    _ = next;
+                    parser.ast_roots.append(parser.expressionStatement()) catch |err| {
+                        std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
+                    };
                 },
             }
         }
@@ -300,22 +314,14 @@ pub const Parser = struct {
         }
     }
 
-    fn functionCall(parser: *Parser) u32 {
-        const function_name_token = parser.consume();
-        if (!parser.match(.left_paren)) {
-            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
-        }
-        //    	const expr_node = parser.expression();
-        if (!parser.match(.right_paren)) {
-            parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
-        }
+    fn functionReturn(parser: *Parser) u32 {
+        const return_token = parser.consume();
+        const expr_node = parser.expression();
         if (!parser.match(.semi_colon)) {
             parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
-        const fn_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, function_name_token.loc);
-        const fn_idx = FnCallTable.appendFunction(.{ .name_node = fn_name_node });
-        const loc: LocInfo = .{ .start = function_name_token.loc.start, .end = parser.peekPrev().loc.end, .line = function_name_token.loc.line };
-        return parser.ast.addLiteralNode(.fn_call, fn_idx, loc);
+        const loc: LocInfo = .{ .start = return_token.loc.start, .end = parser.peekPrev().loc.end, .line = return_token.loc.line };
+        return parser.ast.addUnaryNode(.fn_return, nan_u32, expr_node, loc);
     }
 
     fn functionBlock(parser: *Parser) u32 {
@@ -327,16 +333,30 @@ pub const Parser = struct {
         if (!parser.match(.left_paren)) {
             parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
-        const fn_right_paren = parser.peek();
+        //const fn_right_paren = parser.peek();
         if (!parser.match(.right_paren)) {
             parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
+
+        const fn_return_type_token = parser.consume();
+        if (fn_return_type_token.type != .int_type and fn_return_type_token.type != .float_type and fn_return_type_token.type != .bool_type and fn_return_type_token.type != .void_type) {
+            parser.reportError(fn_return_type_token.loc, "Expected 'type' after ')' and before '{{', found '{s}'.\n", .{fn_return_type_token.type.str()}, true);
+        }
+        var return_symbol_type: SymbolType = undefined;
+        switch (fn_return_type_token.type) {
+            .int_type => return_symbol_type = .t_int,
+            .float_type => return_symbol_type = .t_float,
+            .bool_type => return_symbol_type = .t_bool,
+            .void_type => return_symbol_type = .t_void,
+            else => unreachable,
+        }
+
         const start = parser.ast_roots.items.len;
         parser.block();
         const end = parser.ast_roots.items.len;
         const fn_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, fn_name_token.loc);
-        const fn_idx = FnTable.appendFunction(.{ .name_node = fn_name_node, .body_nodes_start = start, .body_nodes_end = end });
-        const loc: LocInfo = .{ .start = fn_token.loc.start, .end = fn_right_paren.loc.end, .line = fn_token.loc.line };
+        const fn_idx = FnTable.appendFunction(.{ .name_node = fn_name_node, .return_type = return_symbol_type, .body_nodes_start = start, .body_nodes_end = end });
+        const loc: LocInfo = .{ .start = fn_token.loc.start, .end = fn_return_type_token.loc.end, .line = fn_token.loc.line };
         return parser.ast.addLiteralNode(.fn_block, fn_idx, loc);
     }
 

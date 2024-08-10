@@ -27,6 +27,7 @@ pub const Type = enum {
     assign_stmt,
     fn_block,
     fn_call,
+    fn_return,
 
     pub fn strType(ast_type: Type) []const u8 {
         switch (ast_type) {
@@ -64,6 +65,7 @@ pub const Type = enum {
             .assign_stmt => return "assign_stmt",
             .fn_block => return "fn_block",
             .fn_call => return "fn_call",
+            .fn_return => return "fn_return",
         }
     }
 };

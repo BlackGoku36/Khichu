@@ -77,6 +77,7 @@ pub const Inst = u8;
 pub const OpCode = enum(u8) {
     // Control Instruction
     call = 0x10,
+    @"return" = 0x0F,
     // Variable Instruction
     local_get = 0x20,
     local_set = 0x21,
