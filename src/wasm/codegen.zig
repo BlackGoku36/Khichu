@@ -281,7 +281,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
     }
 
     switch (ast.nodes.items[node_idx].type) {
-        .add => {
+        .ast_add => {
             const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
             switch (expr_type) {
                 .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_add)),
@@ -289,7 +289,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                 .t_bool, .t_void => unreachable,
             }
         },
-        .sub => {
+        .ast_sub => {
             const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
             switch (expr_type) {
                 .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_sub)),
@@ -297,7 +297,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                 .t_bool, .t_void => unreachable,
             }
         },
-        .mult => {
+        .ast_mult => {
             const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
             switch (expr_type) {
                 .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult)),
@@ -305,7 +305,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                 .t_bool, .t_void => unreachable,
             }
         },
-        .div => {
+        .ast_div => {
             const expr_type = ExprTypeTable.table.items[ast.nodes.items[node_idx].idx].type;
             switch (expr_type) {
                 .t_int => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_div_s)),
@@ -313,7 +313,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                 .t_bool, .t_void => unreachable,
             }
         },
-        .int_literal => {
+        .ast_int_literal => {
             var int: i32 = 0;
             if (std.fmt.parseInt(i32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end], 10)) |out| {
                 int = out;
@@ -323,7 +323,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
             try leb.writeILEB128(bytecode_writer, int);
         },
-        .float_literal => {
+        .ast_float_literal => {
             var float: f32 = 0.0;
             if (std.fmt.parseFloat(f32, source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end])) |out| {
                 float = out;
@@ -338,7 +338,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             try bytecode.append(@truncate(float_byte >> 8));
             try bytecode.append(@truncate(float_byte));
         },
-        .bool_literal => {
+        .ast_bool_literal => {
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
             if (source[ast.nodes.items[node_idx].loc.start] == 't') {
                 try bytecode.append(0x01);
@@ -346,27 +346,27 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                 try bytecode.append(0x00);
             }
         },
-        .bool_not => {
+        .ast_bool_not => {
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
             try bytecode.append(0x01);
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_xor));
         },
-        .bool_and => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_and)),
-        .bool_or => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_or)),
-        .negate => {
+        .ast_bool_and => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_and)),
+        .ast_bool_or => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_or)),
+        .ast_negate => {
             if (left_exist) {
                 const left_node = ast.nodes.items[ast.nodes.items[node_idx].left];
                 switch (left_node.type) {
-                    .int_literal => {
+                    .ast_int_literal => {
                         // Multiply -1 with the value to get negative value
                         try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
                         try bytecode.append(0x7F); // -1 in LEB128
                         try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_mult));
                     },
-                    .float_literal => {
+                    .ast_float_literal => {
                         try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.f32_neg));
                     },
-                    .identifier => {
+                    .ast_identifier => {
                         const symbol_type = SymbolTable.findByName(source[left_node.loc.start..left_node.loc.end]).?.type;
                         switch (symbol_type) {
                             .t_int => {
@@ -379,8 +379,8 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
                             .t_bool, .t_void => unreachable,
                         }
                     },
-                    .bool_literal => unreachable,
-                    .add, .sub, .mult, .div => {
+                    .ast_bool_literal => unreachable,
+                    .ast_add, .ast_sub, .ast_mult, .ast_div => {
                         const expr_type = ExprTypeTable.table.items[left_node.idx].type;
                         switch (expr_type) {
                             .t_int => {
@@ -403,7 +403,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
         // .lesser_equal => pool.emitBytecodeOp(.op_less_than),
         // .equal_equal => pool.emitBytecodeOp(.op_equal),
         // .not_equal => pool.emitBytecodeOp(.op_not_equal),
-        .identifier => {
+        .ast_identifier => {
             const name: []u8 = source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end];
             var lv_index: usize = nan_u64;
             if(fn_symbol.parameter_end - fn_symbol.parameter_start != 0){
@@ -422,7 +422,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             try leb.writeULEB128(bytecode_writer, lv_index);
             // TODO: Add check for identifier not declared
         },
-        .assign_stmt => {
+        .ast_assign_stmt => {
             const left = ast.nodes.items[node_idx].left;
             const right = ast.nodes.items[node_idx].right;
             try generateWASMCodeFromAst(ast, right, source, bytecode, fn_symbol, lv);
@@ -432,7 +432,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.local_set));
             try leb.writeULEB128(bytecode_writer, lv.getByName(name) + offset);
         },
-        .fn_call => {
+        .ast_fn_call => {
             const current_node_idx = ast.nodes.items[node_idx].idx;
             const function_call_table = FnCallTable.table.items[current_node_idx];
             const function_idx = function_call_table.name_node;
@@ -463,7 +463,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
     const offset = fn_symbol.parameter_end - fn_symbol.parameter_start;
 
     switch (ast.nodes.items[node_idx].type) {
-        .var_stmt => {
+        .ast_var_stmt => {
             const node = ast.nodes.items[node_idx];
             const symbol_entry = SymbolTable.varTable.get(node.idx);
             try generateWASMCodeFromAst(ast, symbol_entry.expr_node, source, bytecode, fn_symbol, lv);
@@ -488,7 +488,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.local_set));
             try leb.writeULEB128(bytecode_writer, index + offset);
         },
-        .print_stmt => {
+        .ast_print_stmt => {
             const left_idx = ast.nodes.items[node_idx].left;
             try generateWASMCodeFromAst(ast, left_idx, source, bytecode, fn_symbol, lv);
             const left_node = ast.nodes.items[left_idx];
@@ -498,9 +498,9 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             const name: []u8 = source[left_node.loc.start..left_node.loc.end];
 
             switch (left_node.type) {
-                .int_literal, .bool_literal => try bytecode.append(0x01),
-                .float_literal => try bytecode.append(0x00),
-                .identifier => {
+                .ast_int_literal, .ast_bool_literal => try bytecode.append(0x01),
+                .ast_float_literal => try bytecode.append(0x00),
+                .ast_identifier => {
                     const symbol = SymbolTable.findByName(name);//.?.type;
                     var symbol_type: FnSymbolType = undefined;
                     if(symbol == null){
@@ -532,7 +532,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
                 },
             }
         },
-        .assign_stmt => {
+        .ast_assign_stmt => {
             const left = ast.nodes.items[node_idx].left;
             const right = ast.nodes.items[node_idx].right;
             try generateWASMCodeFromAst(ast, right, source, bytecode, fn_symbol, lv);
@@ -542,7 +542,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.local_set));
             try leb.writeULEB128(bytecode_writer, lv.getByName(name) + offset);
         },
-        .fn_call => {
+        .ast_fn_call => {
 
             const current_node_idx = ast.nodes.items[node_idx].idx;
             const function_call_table = FnCallTable.table.items[current_node_idx];
@@ -561,7 +561,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));
             try leb.writeULEB128(bytecode_writer, out_idx + 2);
         },
-        .fn_return => {
+        .ast_fn_return => {
             const left = ast.nodes.items[node_idx].left;
             try generateWASMCodeFromAst(ast, left, source, bytecode, fn_symbol, lv);
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.@"return"));

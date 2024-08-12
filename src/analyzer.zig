@@ -31,21 +31,21 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
 
     // TODO: I forgot why I keep checking left/right exist for operations?
     switch (node.type) {
-        .add, .sub, .mult, .div, .bool_not, .bool_and, .bool_or => {
+        .ast_add, .ast_sub, .ast_mult, .ast_div, .ast_bool_not, .ast_bool_and, .ast_bool_or => {
             if (left_exist and right_exist) {
                 var left_type: SymbolType = undefined;
                 var right_type: SymbolType = undefined;
                 const left_node: Node = parser.ast.nodes.items[node.left];
                 const right_node: Node = parser.ast.nodes.items[node.right];
                 switch (left_node.type) {
-                    .identifier => {
+                    .ast_identifier => {
                         const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
                         left_type = getTypeFromIdentifierName(parser, name);
                     },
-                    .int_literal => left_type = .t_int,
-                    .float_literal => left_type = .t_float,
-                    .bool_literal => left_type = .t_bool,
-                    .add, .sub, .mult, .div, .negate, .bool_not, .bool_and, .bool_or => {
+                    .ast_int_literal => left_type = .t_int,
+                    .ast_float_literal => left_type = .t_float,
+                    .ast_bool_literal => left_type = .t_bool,
+                    .ast_add, .ast_sub, .ast_mult, .ast_div, .ast_negate, .ast_bool_not, .ast_bool_and, .ast_bool_or => {
                         left_type = ExprTypeTable.table.items[left_node.idx].type;
                     },
                     else => {
@@ -53,14 +53,14 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
                     },
                 }
                 switch (right_node.type) {
-                    .identifier => {
+                    .ast_identifier => {
                         const name: []u8 = parser.source[right_node.loc.start..right_node.loc.end];
                         right_type = getTypeFromIdentifierName(parser, name);
                     },
-                    .int_literal => right_type = .t_int,
-                    .float_literal => right_type = .t_float,
-                    .bool_literal => right_type = .t_bool,
-                    .add, .sub, .mult, .div, .negate, .bool_not, .bool_and, .bool_or => {
+                    .ast_int_literal => right_type = .t_int,
+                    .ast_float_literal => right_type = .t_float,
+                    .ast_bool_literal => right_type = .t_bool,
+                    .ast_add, .ast_sub, .ast_mult, .ast_div, .ast_negate, .ast_bool_not, .ast_bool_and, .ast_bool_or => {
                         right_type = ExprTypeTable.table.items[right_node.idx].type;
                     },
                     else => {
@@ -79,20 +79,20 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
                 @panic("TODO!");
             }
         },
-        .negate => {
+        .ast_negate => {
             // TODO: Remove this code duplication
             if (left_exist) {
                 var left_type: SymbolType = undefined;
                 const left_node: Node = parser.ast.nodes.items[node.left];
                 switch (left_node.type) {
-                    .identifier => {
+                    .ast_identifier => {
                         const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
                         left_type = getTypeFromIdentifierName(parser, name);
                     },
-                    .int_literal => left_type = .t_int,
-                    .float_literal => left_type = .t_float,
-                    .bool_literal => unreachable,
-                    .add, .sub, .mult, .div => {
+                    .ast_int_literal => left_type = .t_int,
+                    .ast_float_literal => left_type = .t_float,
+                    .ast_bool_literal => unreachable,
+                    .ast_add, .ast_sub, .ast_mult, .ast_div => {
                         left_type = ExprTypeTable.table.items[left_node.idx].type;
                     },
                     else => unreachable,
@@ -100,7 +100,7 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
                 node.idx = ExprTypeTable.appendExprType(left_type);
             }
         },
-        .fn_call => {
+        .ast_fn_call => {
             const fn_call_idx = node.idx;
             const fn_call = FnCallTable.table.items[fn_call_idx];
             for(fn_call.arguments_start..fn_call.arguments_end) | i | {
@@ -126,12 +126,12 @@ pub fn analyse_chain_type(parser: *Parser, curr_node: u32) Node {
     }
 
     switch (node.type) {
-        .add, .sub, .mult, .div => {
+        .ast_add, .ast_sub, .ast_mult, .ast_div => {
             if (left_node.type != right_node.type and left_node.isNumberalLiteral() and right_node.isNumberalLiteral()) {
                 parser.reportError(node.loc, "Types miss-match between '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                 parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                 parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);
-            } else if (left_node.type == .bool_literal or right_node.type == .bool_literal) {
+            } else if (left_node.type == .ast_bool_literal or right_node.type == .ast_bool_literal) {
                 parser.reportError(node.loc, "Unexpected type(s) '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                 parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                 parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);
@@ -142,8 +142,8 @@ pub fn analyse_chain_type(parser: *Parser, curr_node: u32) Node {
                 return new_node;
             }
         },
-        .bool_and, .bool_or => {
-            if (left_node.isTypeLiteral() and right_node.isTypeLiteral() and left_node.type != .bool_literal or right_node.type != .bool_literal) {
+        .ast_bool_and, .ast_bool_or => {
+            if (left_node.isTypeLiteral() and right_node.isTypeLiteral() and left_node.type != .ast_bool_literal or right_node.type != .ast_bool_literal) {
                 parser.reportError(node.loc, "Types miss-match, expected type bool(s) found '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                 parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                 parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);
@@ -154,7 +154,7 @@ pub fn analyse_chain_type(parser: *Parser, curr_node: u32) Node {
                 return new_node;
             }
         },
-        .int_literal, .float_literal, .bool_literal => {
+        .ast_int_literal, .ast_float_literal, .ast_bool_literal => {
             return node;
         },
         else => {},
@@ -175,25 +175,25 @@ pub fn analyse_bool(parser: *Parser, curr_node: u32) void {
     }
 
     switch (node.type) {
-        .bool_not => {
+        .ast_bool_not => {
             if (node.left != nan_u32 and node.right == nan_u32) {
                 const left_node = parser.ast.nodes.items[node.left];
-                if (left_node.type != .bool_literal) {
+                if (left_node.type != .ast_bool_literal) {
                     const loc: LocInfo = .{ .start = node.loc.start, .end = left_node.loc.end, .line = node.loc.line };
                     parser.reportError(loc, "Cannot use operator '!' on type '{s}', expected type 'bool'\n", .{left_node.type.strType()}, true);
                 }
             }
         },
-        .negate => {
+        .ast_negate => {
             if (node.left != nan_u32 and node.right == nan_u32) {
                 const left_node = parser.ast.nodes.items[node.left];
-                if (left_node.type != .int_literal and left_node.type != .float_literal) {
+                if (left_node.type != .ast_int_literal and left_node.type != .ast_float_literal) {
                     const loc: LocInfo = .{ .start = node.loc.start, .end = left_node.loc.end, .line = node.loc.line };
                     parser.reportError(loc, "Cannot use operator '-' on type '{s}', expected type 'float' or type 'int'\n", .{left_node.type.strType()}, true);
                 }
             }
         },
-        .greater, .lesser, .greater_equal, .lesser_equal => {
+        .ast_greater, .ast_lesser, .ast_greater_equal, .ast_lesser_equal => {
             if (node.left != nan_u32 and node.right != nan_u32) {
                 const left_node = parser.ast.nodes.items[node.left];
                 const right_node = parser.ast.nodes.items[node.right];
@@ -202,7 +202,7 @@ pub fn analyse_bool(parser: *Parser, curr_node: u32) void {
                         parser.reportError(node.loc, "Types miss-match between '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                         parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                         parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);
-                    } else if (left_node.type == .bool_literal or right_node.type == .bool_literal) {
+                    } else if (left_node.type == .ast_bool_literal or right_node.type == .ast_bool_literal) {
                         parser.reportError(node.loc, "Unexpected type(s) '{s}' and '{s}'\n", .{ left_node.type.strType(), right_node.type.strType() }, false);
                         parser.reportError(left_node.loc, "Type '{s}' declared here:\n", .{left_node.type.strType()}, false);
                         parser.reportError(right_node.loc, "Type '{s}' declared here:\n", .{right_node.type.strType()}, true);
@@ -216,7 +216,7 @@ pub fn analyse_bool(parser: *Parser, curr_node: u32) void {
                 }
             }
         },
-        .equal_equal, .not_equal => {
+        .ast_equal_equal, .ast_not_equal => {
             if (node.left != nan_u32) {
                 const left_node = parser.ast.nodes.items[node.left];
                 if (left_node.isComparisonOp() and node.isComparisonOp()) {
@@ -243,30 +243,30 @@ pub fn analyse_bool(parser: *Parser, curr_node: u32) void {
 pub fn analyse_block(parser: *Parser, root_idx: usize) void {
         const ast_node = parser.ast.nodes.items[root_idx];
         switch (ast_node.type) {
-            .var_stmt => {
+            .ast_var_stmt => {
                 const symbol_idx = ast_node.idx;
                 const symbol_entry = SymbolTable.varTable.get(symbol_idx);
                 //                    parser.analyse_bool(symbol_entry.expr_node);
                 //                    _ = parser.analyse_chain_type(symbol_entry.expr_node);
                 analyse_type_semantic(parser, symbol_entry.expr_node);
             },
-            .print_stmt => {
+            .ast_print_stmt => {
                 const left_idx = ast_node.left;
                 //                    parser.analyse_bool(left_idx);
                 //                    _ = parser.analyse_chain_type(left_idx);
                 analyse_type_semantic(parser, left_idx);
             },
-            .assign_stmt => {
+            .ast_assign_stmt => {
                 const right_idx = ast_node.right;
                 //                    parser.analyse_bool(right_idx);
                 //                    _ = parser.analyse_chain_type(right_idx);
                 analyse_type_semantic(parser, right_idx);
             },
-            .fn_return => {
+            .ast_fn_return => {
                 const left_idx = ast_node.left;
                 analyse_type_semantic(parser, left_idx);
             },
-            .fn_call => {
+            .ast_fn_call => {
                 const fn_call_idx = ast_node.idx;
                 const fn_call = FnCallTable.table.items[fn_call_idx];
                 for(fn_call.arguments_start..fn_call.arguments_end) | i | {
@@ -283,7 +283,7 @@ pub fn analyze(parser: *Parser) void {
     for (parser.ast_roots.items) |root_idx| {
         const ast_node = parser.ast.nodes.items[root_idx];
         switch(ast_node.type){
-            .fn_block => {
+            .ast_fn_block => {
                 const fn_block_idx = ast_node.idx;
                 const fn_block = FnTable.table.items[fn_block_idx];
                 for(fn_block.body_nodes_start..fn_block.body_nodes_end) | i | {

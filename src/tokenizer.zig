@@ -7,100 +7,100 @@ pub const LocInfo = struct {
 };
 
 pub const TokenType = enum {
-    int,
-    float,
-    plus,
-    minus,
-    star,
-    slash,
-    not,
-    amp,
-    amp_amp,
-    pipe,
-    pipe_pipe,
-    equal,
-    equal_equal,
-    not_equal,
-    greater_equal,
-    lesser_equal,
-    greater,
-    lesser,
-    left_paren,
-    right_paren,
-    left_brace,
-    right_brace,
-    colon,
-    semi_colon,
-    true,
-    false,
-    bool,
-    identifier,
-    @"var",
-    print,
-    int_type,
-    float_type,
-    bool_type,
-    @"fn",
-    void_type,
-    @"return",
-    comma,
-    eof,
+    tok_int,
+    tok_float,
+    tok_plus,
+    tok_minus,
+    tok_star,
+    tok_slash,
+    tok_not,
+    tok_amp,
+    tok_amp_amp,
+    tok_pipe,
+    tok_pipe_pipe,
+    tok_equal,
+    tok_equal_equal,
+    tok_not_equal,
+    tok_greater_equal,
+    tok_lesser_equal,
+    tok_greater,
+    tok_lesser,
+    tok_left_paren,
+    tok_right_paren,
+    tok_left_brace,
+    tok_right_brace,
+    tok_colon,
+    tok_semi_colon,
+    tok_true,
+    tok_false,
+    tok_bool,
+    tok_identifier,
+    tok_var,
+    tok_print,
+    tok_int_type,
+    tok_float_type,
+    tok_bool_type,
+    tok_fn,
+    tok_void_type,
+    tok_return,
+    tok_comma,
+    tok_eof,
 
     pub fn str(token_type: TokenType) []const u8 {
         switch (token_type) {
-            .int => return "int",
-            .float => return "float",
-            .plus => return "plus",
-            .minus => return "minus",
-            .star => return "star",
-            .slash => return "slash",
-            .not => return "not",
-            .amp => return "and",
-            .amp_amp => return "amp_amp",
-            .pipe => return "pipe",
-            .pipe_pipe => return "pipe_pipe",
-            .equal => return "equal",
-            .equal_equal => return "equal_equal",
-            .not_equal => return "not_equal",
-            .greater_equal => return "greater_equal",
-            .lesser_equal => return "lesser_equal",
-            .greater => return "greater",
-            .lesser => return "lesser",
-            .left_paren => return "left_paren",
-            .right_paren => return "right_paren",
-            .left_brace => return "left_brace",
-            .right_brace => return "right_brace",
-            .colon => return "colon",
-            .semi_colon => return "semi_colon",
-            .true => return "true",
-            .false => return "false",
-            .bool => return "bool",
-            .identifier => return "identifier",
-            .@"var" => return "var",
-            .print => return "print",
-            .int_type => return "int_type",
-            .float_type => return "float_type",
-            .bool_type => return "bool_type",
-            .@"fn" => return "fn",
-            .void_type => return "void_type",
-            .@"return" => return "return",
-            .comma => return "comma",
-            .eof => return "eof",
+            .tok_int => return "int",
+            .tok_float => return "float",
+            .tok_plus => return "plus",
+            .tok_minus => return "minus",
+            .tok_star => return "star",
+            .tok_slash => return "slash",
+            .tok_not => return "not",
+            .tok_amp => return "and",
+            .tok_amp_amp => return "amp_amp",
+            .tok_pipe => return "pipe",
+            .tok_pipe_pipe => return "pipe_pipe",
+            .tok_equal => return "equal",
+            .tok_equal_equal => return "equal_equal",
+            .tok_not_equal => return "not_equal",
+            .tok_greater_equal => return "greater_equal",
+            .tok_lesser_equal => return "lesser_equal",
+            .tok_greater => return "greater",
+            .tok_lesser => return "lesser",
+            .tok_left_paren => return "left_paren",
+            .tok_right_paren => return "right_paren",
+            .tok_left_brace => return "left_brace",
+            .tok_right_brace => return "right_brace",
+            .tok_colon => return "colon",
+            .tok_semi_colon => return "semi_colon",
+            .tok_true => return "true",
+            .tok_false => return "false",
+            .tok_bool => return "bool",
+            .tok_identifier => return "identifier",
+            .tok_var => return "var",
+            .tok_print => return "print",
+            .tok_int_type => return "int_type",
+            .tok_float_type => return "float_type",
+            .tok_bool_type => return "bool_type",
+            .tok_fn => return "fn",
+            .tok_void_type => return "void_type",
+            .tok_return => return "return",
+            .tok_comma => return "comma",
+            .tok_eof => return "eof",
         }
     }
 
     pub fn reservedStr(token_type: TokenType) []const u8 {
         switch (token_type) {
-            .@"var" => return "var",
-            .print => return "print",
-            .int_type => return "int",
-            .float_type => return "float",
-            .bool_type => return "bool",
-            .true => return "true",
-            .false => return "false",
-            .@"fn" => return "fn",
-            .void_type => return "void",
-            .@"return" => return "return",
+            .tok_var => return "var",
+            .tok_print => return "print",
+            .tok_int_type => return "int",
+            .tok_float_type => return "float",
+            .tok_bool_type => return "bool",
+            .tok_true => return "true",
+            .tok_false => return "false",
+            .tok_fn => return "fn",
+            .tok_void_type => return "void",
+            .tok_return => return "return",
             else => {
                 return "";
             },
@@ -159,9 +159,9 @@ pub const Tokenizer = struct {
     }
 
     fn parseIdentifier(tokenizer: *Tokenizer) TokenType {
-        const reserved = [_]TokenType{ .true, .false, .@"var", .print, .int_type, .float_type, .bool_type, .@"fn", .void_type, .@"return" };
+        const reserved = [_]TokenType{ .tok_true, .tok_false, .tok_var, .tok_print, .tok_int_type, .tok_float_type, .tok_bool_type, .tok_fn, .tok_void_type, .tok_return };
 
-        var out_token_type: TokenType = .identifier;
+        var out_token_type: TokenType = .tok_identifier;
 
         while (tokenizer.current < tokenizer.source.len and std.ascii.isAlphanumeric(tokenizer.peek())) _ = tokenizer.consume();
 
@@ -192,53 +192,53 @@ pub const Tokenizer = struct {
             const char: u8 = tokenizer.consume();
             switch (char) {
                 '+' => {
-                    tokenizer.add_token(.plus);
+                    tokenizer.add_token(.tok_plus);
                 },
                 '-' => {
-                    tokenizer.add_token(.minus);
+                    tokenizer.add_token(.tok_minus);
                 },
                 '*' => {
-                    tokenizer.add_token(.star);
+                    tokenizer.add_token(.tok_star);
                 },
                 '/' => {
                     if (tokenizer.match('/')) {
                         while (tokenizer.current < tokenizer.source.len and tokenizer.consume() != '\n') {}
                         tokenizer.line += 1;
                     } else {
-                        tokenizer.add_token(.slash);
+                        tokenizer.add_token(.tok_slash);
                     }
                 },
                 '=' => {
-                    const token_type: TokenType = if (tokenizer.match('=')) .equal_equal else .equal;
+                    const token_type: TokenType = if (tokenizer.match('=')) .tok_equal_equal else .tok_equal;
                     tokenizer.add_token(token_type);
                 },
                 '!' => {
-                    const token_type: TokenType = if (tokenizer.match('=')) .not_equal else .not;
+                    const token_type: TokenType = if (tokenizer.match('=')) .tok_not_equal else .tok_not;
                     tokenizer.add_token(token_type);
                 },
                 '&' => {
-                    const token_type: TokenType = if (tokenizer.match('&')) .amp_amp else .amp;
+                    const token_type: TokenType = if (tokenizer.match('&')) .tok_amp_amp else .tok_amp;
                     tokenizer.add_token(token_type);
                 },
                 '|' => {
-                    const token_type: TokenType = if (tokenizer.match('|')) .pipe_pipe else .pipe;
+                    const token_type: TokenType = if (tokenizer.match('|')) .tok_pipe_pipe else .tok_pipe;
                     tokenizer.add_token(token_type);
                 },
                 '>' => {
-                    const token_type: TokenType = if (tokenizer.match('=')) .greater_equal else .greater;
+                    const token_type: TokenType = if (tokenizer.match('=')) .tok_greater_equal else .tok_greater;
                     tokenizer.add_token(token_type);
                 },
                 '<' => {
-                    const token_type: TokenType = if (tokenizer.match('=')) .lesser_equal else .lesser;
+                    const token_type: TokenType = if (tokenizer.match('=')) .tok_lesser_equal else .tok_lesser;
                     tokenizer.add_token(token_type);
                 },
-                '(' => tokenizer.add_token(.left_paren),
-                ')' => tokenizer.add_token(.right_paren),
-                '{' => tokenizer.add_token(.left_brace),
-                '}' => tokenizer.add_token(.right_brace),
-                ':' => tokenizer.add_token(.colon),
-                ';' => tokenizer.add_token(.semi_colon),
-                ',' => tokenizer.add_token(.comma),
+                '(' => tokenizer.add_token(.tok_left_paren),
+                ')' => tokenizer.add_token(.tok_right_paren),
+                '{' => tokenizer.add_token(.tok_left_brace),
+                '}' => tokenizer.add_token(.tok_right_brace),
+                ':' => tokenizer.add_token(.tok_colon),
+                ';' => tokenizer.add_token(.tok_semi_colon),
+                ',' => tokenizer.add_token(.tok_comma),
                 ' ' => {},
                 '\r' => {},
                 '\t' => {},
@@ -246,7 +246,7 @@ pub const Tokenizer = struct {
                 else => {
                     if (std.ascii.isDigit(char)) {
                         const is_float = tokenizer.parseNumber();
-                        tokenizer.add_token(if (is_float) .float else .int);
+                        tokenizer.add_token(if (is_float) .tok_float else .tok_int);
                     } else if (std.ascii.isAlphabetic(char)) {
                         const token_type = tokenizer.parseIdentifier();
                         tokenizer.add_token(token_type);
@@ -256,7 +256,7 @@ pub const Tokenizer = struct {
                 },
             }
         }
-        tokenizer.add_token(.eof);
+        tokenizer.add_token(.tok_eof);
     }
 
     fn reportError(tokenizer: *Tokenizer, err: []const u8, exit: bool) void {

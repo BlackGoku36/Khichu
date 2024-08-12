@@ -4,36 +4,36 @@ const LocInfo = @import("tokenizer.zig").LocInfo;
 const nan_u32 = 0x7FC00000;
 
 pub const Type = enum {
-    int_literal,
-    float_literal,
-    bool_literal,
-    bool_not,
-    bool_and,
-    bool_or,
-    greater,
-    lesser,
-    greater_equal,
-    lesser_equal,
-    equal_equal,
-    not_equal,
-    negate,
-    mult,
-    div,
-    add,
-    sub,
-    identifier,
-    var_stmt,
-    print_stmt,
-    assign_stmt,
-    fn_block,
-    fn_call,
-    fn_return,
+    ast_int_literal,
+    ast_float_literal,
+    ast_bool_literal,
+    ast_bool_not,
+    ast_bool_and,
+    ast_bool_or,
+    ast_greater,
+    ast_lesser,
+    ast_greater_equal,
+    ast_lesser_equal,
+    ast_equal_equal,
+    ast_not_equal,
+    ast_negate,
+    ast_mult,
+    ast_div,
+    ast_add,
+    ast_sub,
+    ast_identifier,
+    ast_var_stmt,
+    ast_print_stmt,
+    ast_assign_stmt,
+    ast_fn_block,
+    ast_fn_call,
+    ast_fn_return,
 
     pub fn strType(ast_type: Type) []const u8 {
         switch (ast_type) {
-            .int_literal => return "int",
-            .float_literal => return "float",
-            .bool_literal => return "bool",
+            .ast_int_literal => return "int",
+            .ast_float_literal => return "float",
+            .ast_bool_literal => return "bool",
             else => {
                 unreachable;
             },
@@ -42,30 +42,30 @@ pub const Type = enum {
 
     pub fn str(ast_type: Type) []const u8 {
         switch (ast_type) {
-            .int_literal => return "int_literal",
-            .float_literal => return "float_literal",
-            .bool_literal => return "bool_literal",
-            .bool_not => return "bool_not",
-            .bool_and => return "bool_and",
-            .bool_or => return "bool_or",
-            .greater => return "greater",
-            .lesser => return "lesser",
-            .greater_equal => return "greater_equal",
-            .lesser_equal => return "lesser_equal",
-            .equal_equal => return "equal_equal",
-            .not_equal => return "not_equal",
-            .negate => return "negate",
-            .mult => return "mult",
-            .div => return "div",
-            .add => return "add",
-            .sub => return "sub",
-            .identifier => return "identifier",
-            .var_stmt => return "var_stmt",
-            .print_stmt => return "print_stmt",
-            .assign_stmt => return "assign_stmt",
-            .fn_block => return "fn_block",
-            .fn_call => return "fn_call",
-            .fn_return => return "fn_return",
+            .ast_int_literal => return "int_literal",
+            .ast_float_literal => return "float_literal",
+            .ast_bool_literal => return "bool_literal",
+            .ast_bool_not => return "bool_not",
+            .ast_bool_and => return "bool_and",
+            .ast_bool_or => return "bool_or",
+            .ast_greater => return "greater",
+            .ast_lesser => return "lesser",
+            .ast_greater_equal => return "greater_equal",
+            .ast_lesser_equal => return "lesser_equal",
+            .ast_equal_equal => return "equal_equal",
+            .ast_not_equal => return "not_equal",
+            .ast_negate => return "negate",
+            .ast_mult => return "mult",
+            .ast_div => return "div",
+            .ast_add => return "add",
+            .ast_sub => return "sub",
+            .ast_identifier => return "identifier",
+            .ast_var_stmt => return "var_stmt",
+            .ast_print_stmt => return "print_stmt",
+            .ast_assign_stmt => return "assign_stmt",
+            .ast_fn_block => return "fn_block",
+            .ast_fn_call => return "fn_call",
+            .ast_fn_return => return "fn_return",
         }
     }
 };
@@ -78,15 +78,15 @@ pub const Node = struct {
     right: u32,
 
     pub fn isTypeLiteral(node: Node) bool {
-        return node.type == .int_literal or node.type == .float_literal or node.type == .bool_literal;
+        return node.type == .ast_int_literal or node.type == .ast_float_literal or node.type == .ast_bool_literal;
     }
 
     pub fn isNumberalLiteral(node: Node) bool {
-        return node.type == .int_literal or node.type == .float_literal;
+        return node.type == .ast_int_literal or node.type == .ast_float_literal;
     }
 
     pub fn isComparisonOp(node: Node) bool {
-        return node.type == .greater or node.type == .lesser or node.type == .greater_equal or node.type == .lesser_equal or node.type == .equal_equal or node.type == .not_equal;
+        return node.type == .ast_greater or node.type == .ast_lesser or node.type == .ast_greater_equal or node.type == .ast_lesser_equal or node.type == .ast_equal_equal or node.type == .ast_not_equal;
     }
 };
 

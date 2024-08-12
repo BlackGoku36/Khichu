@@ -66,26 +66,26 @@ pub const Parser = struct {
     }
 
     fn primary(parser: *Parser) u32 {
-        if (parser.match(.int)) {
+        if (parser.match(.tok_int)) {
             const int_lit = parser.peekPrev();
-            return parser.ast.addLiteralNode(.int_literal, nan_u32, int_lit.loc);
+            return parser.ast.addLiteralNode(.ast_int_literal, nan_u32, int_lit.loc);
         }
-        if (parser.match(.float)) {
+        if (parser.match(.tok_float)) {
             const float_lit = parser.peekPrev();
-            return parser.ast.addLiteralNode(.float_literal, nan_u32, float_lit.loc);
+            return parser.ast.addLiteralNode(.ast_float_literal, nan_u32, float_lit.loc);
         }
-        if (parser.match(.true) or parser.match(.false)) {
+        if (parser.match(.tok_true) or parser.match(.tok_false)) {
             const bool_lit = parser.peekPrev();
-            return parser.ast.addLiteralNode(.bool_literal, nan_u32, bool_lit.loc);
+            return parser.ast.addLiteralNode(.ast_bool_literal, nan_u32, bool_lit.loc);
         }
-        if (parser.match(.identifier)) {
+        if (parser.match(.tok_identifier)) {
             const ident = parser.peekPrev();
-            return parser.ast.addLiteralNode(.identifier, nan_u32, ident.loc);
+            return parser.ast.addLiteralNode(.ast_identifier, nan_u32, ident.loc);
         }
-        if (parser.match(.left_paren)) {
+        if (parser.match(.tok_left_paren)) {
             const left_paren = parser.peekPrev();
             const expr: u32 = parser.expression();
-            if (!parser.match(.right_paren)) parser.reportError(left_paren.loc, "Expected ')' after expression\n", .{}, true);
+            if (!parser.match(.tok_right_paren)) parser.reportError(left_paren.loc, "Expected ')' after expression\n", .{}, true);
             return expr;
         }
 
@@ -102,24 +102,24 @@ pub const Parser = struct {
 
         while(true){
             const fn_name_token = parser.peekPrev();
-            if(parser.match(.left_paren)){
-                if(parser.peek().type != .right_paren){
+            if(parser.match(.tok_left_paren)){
+                if(parser.peek().type != .tok_right_paren){
                     while(true){
                         const argument = parser.expression();
                         FnCallTable.arguments.append(argument) catch | err | {
                             std.debug.print("Couldn't append arguments to table: {}", .{err});
                         };
                         argument_size += 1;
-                        if(!parser.match(.comma)) break;
+                        if(!parser.match(.tok_comma)) break;
                     }
                 }
-                if(!parser.match(.right_paren)){
+                if(!parser.match(.tok_right_paren)){
                     parser.reportError(parser.peekPrev().loc, "Expected ')' after expression\n", .{}, true);
                 }
                 const fn_name_node = expr;
                 const fn_idx = FnCallTable.appendFunction(.{ .name_node = fn_name_node, .arguments_start = argument_start, .arguments_end = argument_start + argument_size });
                 const loc: LocInfo = .{ .start = fn_name_token.loc.start, .end = parser.peekPrev().loc.end, .line = fn_name_token.loc.line };
-                expr = parser.ast.addLiteralNode(.fn_call, fn_idx, loc);
+                expr = parser.ast.addLiteralNode(.ast_fn_call, fn_idx, loc);
             }else{
                 break;
             }
@@ -129,7 +129,7 @@ pub const Parser = struct {
     }
 
     fn unary(parser: *Parser) u32 {
-        if (parser.match(.minus)) {
+        if (parser.match(.tok_minus)) {
             const minus = parser.peekPrev();
             const node = parser.unary();
             const loc: LocInfo = .{
@@ -137,9 +137,9 @@ pub const Parser = struct {
                 .end = parser.getNode(node).loc.end,
                 .line = minus.loc.line,
             };
-            return parser.ast.addUnaryNode(.negate, nan_u32, node, loc);
+            return parser.ast.addUnaryNode(.ast_negate, nan_u32, node, loc);
         }
-        if (parser.match(.not)) {
+        if (parser.match(.tok_not)) {
             const not = parser.peekPrev();
             const node = parser.unary();
             const loc: LocInfo = .{
@@ -147,16 +147,16 @@ pub const Parser = struct {
                 .end = parser.getNode(node).loc.end,
                 .line = not.loc.line,
             };
-            return parser.ast.addUnaryNode(.bool_not, nan_u32, node, loc);
+            return parser.ast.addUnaryNode(.ast_bool_not, nan_u32, node, loc);
         }
         return parser.call();
     }
 
     fn factor(parser: *Parser) u32 {
         var left = parser.unary();
-        while (parser.match(.star) or parser.match(.slash)) {
+        while (parser.match(.tok_star) or parser.match(.tok_slash)) {
             const op_token = parser.peekPrev();
-            const op_type: Type = if (op_token.type == .star) .mult else .div;
+            const op_type: Type = if (op_token.type == .tok_star) .ast_mult else .ast_div;
             const right = parser.unary();
             left = parser.ast.addNode(op_type, nan_u32, left, right, op_token.loc);
         }
@@ -165,9 +165,9 @@ pub const Parser = struct {
 
     fn term(parser: *Parser) u32 {
         var left = parser.factor();
-        while (parser.match(.plus) or parser.match(.minus)) {
+        while (parser.match(.tok_plus) or parser.match(.tok_minus)) {
             const op_token = parser.peekPrev();
-            const op_type: Type = if (op_token.type == .plus) .add else .sub;
+            const op_type: Type = if (op_token.type == .tok_plus) .ast_add else .ast_sub;
             const right = parser.factor();
             left = parser.ast.addNode(op_type, nan_u32, left, right, op_token.loc);
         }
@@ -176,14 +176,14 @@ pub const Parser = struct {
 
     fn comparision(parser: *Parser) u32 {
         var left = parser.term();
-        while (parser.match(.greater) or parser.match(.lesser) or parser.match(.greater_equal) or parser.match(.lesser_equal)) {
+        while (parser.match(.tok_greater) or parser.match(.tok_lesser) or parser.match(.tok_greater_equal) or parser.match(.tok_lesser_equal)) {
             const op_token = parser.peekPrev();
             var op_type: Type = undefined;
             switch (op_token.type) {
-                .greater => op_type = .greater,
-                .lesser => op_type = .lesser,
-                .greater_equal => op_type = .greater_equal,
-                .lesser_equal => op_type = .lesser_equal,
+                .tok_greater => op_type = .ast_greater,
+                .tok_lesser => op_type = .ast_lesser,
+                .tok_greater_equal => op_type = .ast_greater_equal,
+                .tok_lesser_equal => op_type = .ast_lesser_equal,
                 else => {},
             }
             const right = parser.term();
@@ -194,9 +194,9 @@ pub const Parser = struct {
 
     fn equality(parser: *Parser) u32 {
         var left = parser.comparision();
-        while (parser.match(.equal_equal) or parser.match(.not_equal)) {
+        while (parser.match(.tok_equal_equal) or parser.match(.tok_not_equal)) {
             const op_token = parser.peekPrev();
-            const op_type: Type = if (op_token.type == .equal_equal) .equal_equal else .not_equal;
+            const op_type: Type = if (op_token.type == .tok_equal_equal) .ast_equal_equal else .ast_not_equal;
             const right = parser.comparision();
             left = parser.ast.addNode(op_type, nan_u32, left, right, op_token.loc);
         }
@@ -205,9 +205,9 @@ pub const Parser = struct {
 
     fn logical(parser: *Parser) u32 {
         var left = parser.equality();
-        while (parser.match(.amp_amp) or parser.match(.pipe_pipe)) {
+        while (parser.match(.tok_amp_amp) or parser.match(.tok_pipe_pipe)) {
             const op_token = parser.peekPrev();
-            const op_type: Type = if (op_token.type == .amp_amp) .bool_and else .bool_or;
+            const op_type: Type = if (op_token.type == .tok_amp_amp) .ast_bool_and else .ast_bool_or;
             const right = parser.equality();
             left = parser.ast.addNode(op_type, nan_u32, left, right, op_token.loc);
         }
@@ -217,13 +217,13 @@ pub const Parser = struct {
     fn assignment(parser: *Parser) u32 {
         const ident_idx = parser.logical();
         const ident_node = parser.ast.nodes.items[ident_idx];
-        if (parser.match(.equal)) {
-            if (ident_node.type != .identifier) {
+        if (parser.match(.tok_equal)) {
+            if (ident_node.type != .ast_identifier) {
                 parser.reportError(ident_node.loc, "Expected 'identifier' before '=', found '{s}'.\n", .{ident_node.type.str()}, true);
             }
             const expr_node = parser.assignment();
             const loc: LocInfo = .{ .start = ident_node.loc.start, .end = parser.peekPrev().loc.end, .line = ident_node.loc.line };
-            return parser.ast.addNode(.assign_stmt, nan_u32, ident_idx, expr_node, loc);
+            return parser.ast.addNode(.ast_assign_stmt, nan_u32, ident_idx, expr_node, loc);
         }
         return ident_idx;
     }
@@ -234,7 +234,7 @@ pub const Parser = struct {
 
     fn expressionStatement(parser: *Parser) u32 {
         const expr = parser.expression();
-        if (!parser.match(.semi_colon)) {
+        if (!parser.match(.tok_semi_colon)) {
             parser.reportError(parser.peekPrev().loc, "Expected ';' after 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         return expr;
@@ -243,7 +243,7 @@ pub const Parser = struct {
     //TODO: check if this can be cleaned up
     fn varStatement(parser: *Parser) u32 {
         const var_token = parser.consume(); //Consume 'var' token
-        if (!parser.match(.identifier)) {
+        if (!parser.match(.tok_identifier)) {
             parser.reportError(var_token.loc, "Expected identifier after 'var', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
 
@@ -254,16 +254,16 @@ pub const Parser = struct {
             parser.reportError(ident.loc, "Variable named '{s}' already exists.\n", .{parser.source[ident.loc.start..ident.loc.end]}, true);
         }
 
-        if (!parser.match(.colon)) {
+        if (!parser.match(.tok_colon)) {
             parser.reportError(parser.peekPrev().loc, "Expected ':' after 'identifier' and before 'type', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
 
         const type_token = parser.consume();
-        if (type_token.type != .int_type and type_token.type != .float_type and type_token.type != .bool_type) {
+        if (type_token.type != .tok_int_type and type_token.type != .tok_float_type and type_token.type != .tok_bool_type) {
             parser.reportError(type_token.loc, "Expected 'type' after ':' and before '=', found '{s}'.\n", .{type_token.type.str()}, true);
         }
 
-        if (!parser.match(.equal)) {
+        if (!parser.match(.tok_equal)) {
             parser.reportError(parser.peekPrev().loc, "Expected '=' after 'type' and before 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
 
@@ -274,42 +274,42 @@ pub const Parser = struct {
         const symbol_idx = SymbolTable.appendVar(.{ .name = parser.source[ident.loc.start..ident.loc.end], .type = symbol_type, .expr_node = expr_node });
 
         const loc: LocInfo = .{ .start = var_token.loc.start, .end = parser.peekPrev().loc.end, .line = var_token.loc.line };
-        return parser.ast.addLiteralNode(.var_stmt, symbol_idx, loc);
+        return parser.ast.addLiteralNode(.ast_var_stmt, symbol_idx, loc);
     }
 
     fn printStatement(parser: *Parser) u32 {
         const print_token = parser.consume();
-        if (!parser.match(.left_paren)) {
+        if (!parser.match(.tok_left_paren)) {
             parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         const expr_node = parser.expression();
-        if (!parser.match(.right_paren)) {
+        if (!parser.match(.tok_right_paren)) {
             parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
-        if (!parser.match(.semi_colon)) {
+        if (!parser.match(.tok_semi_colon)) {
             parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         const loc: LocInfo = .{ .start = print_token.loc.start, .end = parser.peekPrev().loc.end, .line = print_token.loc.line };
-        return parser.ast.addUnaryNode(.print_stmt, nan_u32, expr_node, loc);
+        return parser.ast.addUnaryNode(.ast_print_stmt, nan_u32, expr_node, loc);
     }
 
     pub fn block(parser: *Parser) void {
-        if (!parser.match(.left_brace)) {
+        if (!parser.match(.tok_left_brace)) {
             parser.reportError(parser.peekPrev().loc, "Expected '{{' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
-        while ((parser.peek().type != .right_brace) and (parser.peek().type != .eof)) {
+        while ((parser.peek().type != .tok_right_brace) and (parser.peek().type != .tok_eof)) {
             switch (parser.peek().type) {
-                .@"var" => {
+                .tok_var => {
                     parser.ast_roots.append(parser.varStatement()) catch |err| {
                         std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
                     };
                 },
-                .print => {
+                .tok_print => {
                     parser.ast_roots.append(parser.printStatement()) catch |err| {
                         std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
                     };
                 },
-                .@"return" => {
+                .tok_return => {
                     parser.ast_roots.append(parser.functionReturn()) catch |err| {
                         std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
                     };
@@ -325,7 +325,7 @@ pub const Parser = struct {
                 },
             }
         }
-        if (!parser.match(.right_brace)) {
+        if (!parser.match(.tok_right_brace)) {
             parser.reportError(parser.peekPrev().loc, "Expected '}}' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
     }
@@ -333,41 +333,41 @@ pub const Parser = struct {
     fn functionReturn(parser: *Parser) u32 {
         const return_token = parser.consume();
         const expr_node = parser.expression();
-        if (!parser.match(.semi_colon)) {
+        if (!parser.match(.tok_semi_colon)) {
             parser.reportError(parser.peekPrev().loc, "Expected ';' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         const loc: LocInfo = .{ .start = return_token.loc.start, .end = parser.peekPrev().loc.end, .line = return_token.loc.line };
-        return parser.ast.addUnaryNode(.fn_return, nan_u32, expr_node, loc);
+        return parser.ast.addUnaryNode(.ast_fn_return, nan_u32, expr_node, loc);
     }
 
     fn functionBlock(parser: *Parser) u32 {
         const fn_token = parser.consume();
         const fn_name_token = parser.consume();
-        if (fn_name_token.type != .identifier) {
+        if (fn_name_token.type != .tok_identifier) {
             parser.reportError(parser.peekPrev().loc, "Expected name of function after 'fn', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
-        if (!parser.match(.left_paren)) {
+        if (!parser.match(.tok_left_paren)) {
             parser.reportError(parser.peekPrev().loc, "Expected '(' after 'print', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
 
         const parameter_start = FnTable.parameters.items.len;
         var parameter_size: usize = 0;
 
-        if(parser.peek().type != .right_paren){
+        if(parser.peek().type != .tok_right_paren){
             while(true){
                 const parameter_identifier = parser.peek();
-                if(!parser.match(.identifier)){
+                if(!parser.match(.tok_identifier)){
                     parser.reportError(parameter_identifier.loc, "Expected name of parameter after '(' and before ':', found '{s}'.\n", .{parameter_identifier.type.str()}, true);
                 }
-                if(!parser.match(.colon)){
+                if(!parser.match(.tok_colon)){
                     parser.reportError(parameter_identifier.loc, "Expected ':' after parameter name and before type, found '{s}'.\n", .{parameter_identifier.type.str()}, true);
                 }
                 const parameter_type_token = parser.consume();
-                if(parameter_type_token.type != .int_type and parameter_type_token.type != .float_type and parameter_type_token.type != .bool_type){
+                if(parameter_type_token.type != .tok_int_type and parameter_type_token.type != .tok_float_type and parameter_type_token.type != .tok_bool_type){
                     parser.reportError(parameter_identifier.loc, "Expected type after ':' and before ')', found '{s}'.\n", .{parameter_identifier.type.str()}, true);
                 }
                 
-                const parameter_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, parameter_identifier.loc);
+                const parameter_name_node = parser.ast.addLiteralNode(.ast_identifier, nan_u32, parameter_identifier.loc);
 
                 const parameter_type: SymbolType = typeTokenToSymbolType(parameter_type_token);
 
@@ -376,18 +376,18 @@ pub const Parser = struct {
                 };
                 parameter_size += 1;
 
-                if(!parser.match(.comma)){
+                if(!parser.match(.tok_comma)){
                     break;
                 }
             }
         }
 
-        if (!parser.match(.right_paren)) {
+        if (!parser.match(.tok_right_paren)) {
             parser.reportError(parser.peekPrev().loc, "Expected ')' after 'expression', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
 
         const fn_return_type_token = parser.consume();
-        if (fn_return_type_token.type != .int_type and fn_return_type_token.type != .float_type and fn_return_type_token.type != .bool_type and fn_return_type_token.type != .void_type) {
+        if (fn_return_type_token.type != .tok_int_type and fn_return_type_token.type != .tok_float_type and fn_return_type_token.type != .tok_bool_type and fn_return_type_token.type != .tok_void_type) {
             parser.reportError(fn_return_type_token.loc, "Expected 'type' after ')' and before '{{', found '{s}'.\n", .{fn_return_type_token.type.str()}, true);
         }
 
@@ -396,7 +396,7 @@ pub const Parser = struct {
         const start = parser.ast_roots.items.len;
         parser.block();
         const end = parser.ast_roots.items.len;
-        const fn_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, fn_name_token.loc);
+        const fn_name_node = parser.ast.addLiteralNode(.ast_identifier, nan_u32, fn_name_token.loc);
         const fn_idx = FnTable.appendFunction(.{ 
             .name_node = fn_name_node, 
             .return_type = return_symbol_type,
@@ -405,7 +405,7 @@ pub const Parser = struct {
             .body_nodes_start = start, .body_nodes_end = end 
         });
         const loc: LocInfo = .{ .start = fn_token.loc.start, .end = fn_return_type_token.loc.end, .line = fn_token.loc.line };
-        return parser.ast.addLiteralNode(.fn_block, fn_idx, loc);
+        return parser.ast.addLiteralNode(.ast_fn_block, fn_idx, loc);
     }
 
     pub fn reportError(parser: *Parser, loc: LocInfo, comptime str: []const u8, args: anytype, exit: bool) void {
@@ -440,21 +440,21 @@ pub const Parser = struct {
     }
 
     pub fn parse(parser: *Parser) void {
-        while (parser.peek().type != .eof) {
+        while (parser.peek().type != .tok_eof) {
             switch (parser.peek().type) {
-                .@"var" => {
+                .tok_var => {
                     //                    parser.ast_roots.append(parser.varStatement()) catch |err|{
                     //                        std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
                     //                    };
                     unreachable;
                 },
-                .print => {
+                .tok_print => {
                     //                    parser.ast_roots.append(parser.printStatement()) catch |err|{
                     //                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
                     //                    };
                     unreachable;
                 },
-                .@"fn" => {
+                .tok_fn => {
                     parser.ast_roots.append(parser.functionBlock()) catch |err| {
                         std.debug.print("Unable to append function block ast node to root list: {}", .{err});
                     };
@@ -472,10 +472,10 @@ pub const Parser = struct {
     fn typeTokenToSymbolType(token: Token) SymbolType {
         var symbol_type: SymbolType = undefined;
         switch (token.type) {
-            .int_type => symbol_type = .t_int,
-            .float_type => symbol_type = .t_float,
-            .bool_type => symbol_type = .t_bool,
-            .void_type => symbol_type = .t_void,
+            .tok_int_type => symbol_type = .t_int,
+            .tok_float_type => symbol_type = .t_float,
+            .tok_bool_type => symbol_type = .t_bool,
+            .tok_void_type => symbol_type = .t_void,
             else => unreachable,
         }
         return symbol_type;
