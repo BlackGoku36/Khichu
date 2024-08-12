@@ -269,13 +269,7 @@ pub const Parser = struct {
 
         const expr_node = parser.expressionStatement();
 
-        var symbol_type: SymbolType = undefined;
-        switch (type_token.type) {
-            .int_type => symbol_type = .t_int,
-            .float_type => symbol_type = .t_float,
-            .bool_type => symbol_type = .t_bool,
-            else => unreachable,
-        }
+        const symbol_type: SymbolType = typeTokenToSymbolType(type_token);
 
         const symbol_idx = SymbolTable.appendVar(.{ .name = parser.source[ident.loc.start..ident.loc.end], .type = symbol_type, .expr_node = expr_node });
 
@@ -375,13 +369,8 @@ pub const Parser = struct {
                 
                 const parameter_name_node = parser.ast.addLiteralNode(.identifier, nan_u32, parameter_identifier.loc);
 
-                var parameter_type: SymbolType = undefined;
-                switch (parameter_type_token.type) {
-                    .int_type => parameter_type = .t_int,
-                    .float_type => parameter_type = .t_float,
-                    .bool_type => parameter_type = .t_bool,
-                    else => unreachable,
-                } 
+                const parameter_type: SymbolType = typeTokenToSymbolType(parameter_type_token);
+
                 FnTable.parameters.append(.{.name_node = parameter_name_node, .parameter_type = parameter_type}) catch |err| {
                     std.debug.print("Unable to create entry in FnTable (parameters): {}", .{err});
                 };
@@ -401,14 +390,8 @@ pub const Parser = struct {
         if (fn_return_type_token.type != .int_type and fn_return_type_token.type != .float_type and fn_return_type_token.type != .bool_type and fn_return_type_token.type != .void_type) {
             parser.reportError(fn_return_type_token.loc, "Expected 'type' after ')' and before '{{', found '{s}'.\n", .{fn_return_type_token.type.str()}, true);
         }
-        var return_symbol_type: SymbolType = undefined;
-        switch (fn_return_type_token.type) {
-            .int_type => return_symbol_type = .t_int,
-            .float_type => return_symbol_type = .t_float,
-            .bool_type => return_symbol_type = .t_bool,
-            .void_type => return_symbol_type = .t_void,
-            else => unreachable,
-        }
+
+        const return_symbol_type: SymbolType = typeTokenToSymbolType(fn_return_type_token);
 
         const start = parser.ast_roots.items.len;
         parser.block();
@@ -484,5 +467,17 @@ pub const Parser = struct {
                 },
             }
         }
+    }
+
+    fn typeTokenToSymbolType(token: Token) SymbolType {
+        var symbol_type: SymbolType = undefined;
+        switch (token.type) {
+            .int_type => symbol_type = .t_int,
+            .float_type => symbol_type = .t_float,
+            .bool_type => symbol_type = .t_bool,
+            .void_type => symbol_type = .t_void,
+            else => unreachable,
+        }
+        return symbol_type;
     }
 };

@@ -39,40 +39,8 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: u32) void {
                 const right_node: Node = parser.ast.nodes.items[node.right];
                 switch (left_node.type) {
                     .identifier => {
-                        // TODO: MERGE
                         const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
-                        if (SymbolTable.findByName(name)) |sym| {
-                            left_type = sym.type;
-                        } else {
-                            var found: bool = false;
-                            for (FnTable.table.items) | fn_symbol | {
-                                const name_node = parser.ast.nodes.items[fn_symbol.name_node];
-                                const fn_name = parser.source[name_node.loc.start..name_node.loc.end];
-                                std.debug.print("fn_name = {s}\n", .{fn_name});
-                                std.debug.print("requested fn_name = {s}\n", .{name});
-                                if (std.mem.eql(u8, name, fn_name)) {
-                                    left_type = fn_symbol.return_type;
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if(found == false){
-                                for(FnTable.table.items) | fn_symbol | {
-                                    for(fn_symbol.parameter_start..fn_symbol.parameter_end) | i | {
-                                        const parameter = FnTable.parameters.items[i];
-                                        const parameter_node = parser.ast.nodes.items[parameter.name_node];
-                                        const parameter_name = parser.source[parameter_node.loc.start..parameter_node.loc.end];
-                                        if (std.mem.eql(u8, name, parameter_name)) {
-                                            left_type = parameter.parameter_type;
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if (found == true) break;
-                                }
-                            }
-                            if(found == false) unreachable;
-                        }
+                        left_type = getTypeFromIdentifierName(parser, name);
                     },
                     .int_literal => left_type = .t_int,
                     .float_literal => left_type = .t_float,
@@ -86,40 +54,8 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: u32) void {
                 }
                 switch (right_node.type) {
                     .identifier => {
-                        // TODO: MERGE
                         const name: []u8 = parser.source[right_node.loc.start..right_node.loc.end];
-                        if (SymbolTable.findByName(name)) |sym| {
-                            right_type = sym.type;
-                        } else {
-                            var found: bool = false;
-                            for (FnTable.table.items) | fn_symbol | {
-                                const name_node = parser.ast.nodes.items[fn_symbol.name_node];
-                                const fn_name = parser.source[name_node.loc.start..name_node.loc.end];
-                                std.debug.print("fn_name = {s}\n", .{fn_name});
-                                std.debug.print("requested fn_name = {s}\n", .{name});
-                                if (std.mem.eql(u8, name, fn_name)) {
-                                    right_type = fn_symbol.return_type;
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if(found == false){
-                                for(FnTable.table.items) | fn_symbol | {
-                                    for(fn_symbol.parameter_start..fn_symbol.parameter_end) | i | {
-                                        const parameter = FnTable.parameters.items[i];
-                                        const parameter_node = parser.ast.nodes.items[parameter.name_node];
-                                        const parameter_name = parser.source[parameter_node.loc.start..parameter_node.loc.end];
-                                        if (std.mem.eql(u8, name, parameter_name)) {
-                                            right_type = parameter.parameter_type;
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if (found == true) break;
-                                }
-                            }
-                            if(found == false) unreachable;
-                        }
+                        right_type = getTypeFromIdentifierName(parser, name);
                     },
                     .int_literal => right_type = .t_int,
                     .float_literal => right_type = .t_float,
@@ -150,40 +86,8 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: u32) void {
                 const left_node: Node = parser.ast.nodes.items[node.left];
                 switch (left_node.type) {
                     .identifier => {
-                        // TODO: MERGE
                         const name: []u8 = parser.source[left_node.loc.start..left_node.loc.end];
-                        if (SymbolTable.findByName(name)) |sym| {
-                            left_type = sym.type;
-                        } else {
-                            var found: bool = false;
-                            for (FnTable.table.items) | fn_symbol | {
-                                const name_node = parser.ast.nodes.items[fn_symbol.name_node];
-                                const fn_name = parser.source[name_node.loc.start..name_node.loc.end];
-                                std.debug.print("fn_name = {s}\n", .{fn_name});
-                                std.debug.print("requested fn_name = {s}\n", .{name});
-                                if (std.mem.eql(u8, name, fn_name)) {
-                                    left_type = fn_symbol.return_type;
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if(found == false){
-                                for(FnTable.table.items) | fn_symbol | {
-                                    for(fn_symbol.parameter_start..fn_symbol.parameter_end) | i | {
-                                        const parameter = FnTable.parameters.items[i];
-                                        const parameter_node = parser.ast.nodes.items[parameter.name_node];
-                                        const parameter_name = parser.source[parameter_node.loc.start..parameter_node.loc.end];
-                                        if (std.mem.eql(u8, name, parameter_name)) {
-                                            left_type = parameter.parameter_type;
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if (found == true) break;
-                                }
-                            }
-                            if(found == false) unreachable;
-                        }
+                        left_type = getTypeFromIdentifierName(parser, name);
                     },
                     .int_literal => left_type = .t_int,
                     .float_literal => left_type = .t_float,
@@ -390,4 +294,35 @@ pub fn analyze(parser: *Parser) void {
     for (parser.ast_roots.items) |root_idx| {
         analyse_block(parser, root_idx);
     }
+}
+
+fn getTypeFromIdentifierName(parser: *Parser, name: []u8) SymbolType {
+    // Try Variable's symbol table
+    if (SymbolTable.findByName(name)) |sym| {
+        return sym.type;
+    }
+    
+    // Try function's return
+    for (FnTable.table.items) | fn_symbol | {
+        const name_node = parser.ast.nodes.items[fn_symbol.name_node];
+        const fn_name = parser.source[name_node.loc.start..name_node.loc.end];
+        std.debug.print("fn_name = {s}\n", .{fn_name});
+        std.debug.print("requested fn_name = {s}\n", .{name});
+        if (std.mem.eql(u8, name, fn_name)) {
+            return fn_symbol.return_type;
+        }
+    }
+
+    // Try function's parameters
+    for(FnTable.table.items) | fn_symbol | {
+        for(fn_symbol.parameter_start..fn_symbol.parameter_end) | i | {
+            const parameter = FnTable.parameters.items[i];
+            const parameter_node = parser.ast.nodes.items[parameter.name_node];
+            const parameter_name = parser.source[parameter_node.loc.start..parameter_node.loc.end];
+            if (std.mem.eql(u8, name, parameter_name)) {
+                return parameter.parameter_type;
+            }
+        }
+    }
+    unreachable; 
 }
