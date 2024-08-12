@@ -265,7 +265,7 @@ fn generateWASM(parser: *Parser, source: []u8, fn_: FnSymbol, allocator: std.mem
     return code;
 }
 
-fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.ArrayList(Inst), fn_symbol: FnSymbol, lv: *VarTable) !void {
+fn generateWASMCodeFromAst(ast: *Ast, node_idx: usize, source: []u8, bytecode: *std.ArrayList(Inst), fn_symbol: FnSymbol, lv: *VarTable) !void {
     const left_exist = ast.nodes.items[node_idx].left != nan_u32;
     const right_exist = ast.nodes.items[node_idx].right != nan_u32;
 
@@ -444,8 +444,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
 
             for(function_call_table.arguments_start..function_call_table.arguments_end) | i | {
                 const argument_expr = FnCallTable.arguments.items[i];
-                // TODO: remove below @intCast
-                try generateWASMCodeFromAst(ast, @intCast(argument_expr), source, bytecode, fn_symbol, lv);
+                try generateWASMCodeFromAst(ast, argument_expr, source, bytecode, fn_symbol, lv);
             }
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));
@@ -455,7 +454,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: u32, source: []u8, bytecode: *st
     }
 }
 
-pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.ArrayList(Inst), locals: *std.ArrayList(Local), fn_symbol: FnSymbol, lv: *VarTable) !void {
+pub fn generateWASMCode(ast: *Ast, node_idx: usize, source: []u8, bytecode: *std.ArrayList(Inst), locals: *std.ArrayList(Local), fn_symbol: FnSymbol, lv: *VarTable) !void {
     // generateCodeFromAst(ast, node, source, pool);
     // pool.emitBytecodeOp(.op_return);
 
@@ -554,8 +553,7 @@ pub fn generateWASMCode(ast: *Ast, node_idx: u32, source: []u8, bytecode: *std.A
 
             for(function_call_table.arguments_start..function_call_table.arguments_end) | i | {
                 const argument_expr = FnCallTable.arguments.items[i];
-                // TODO: remove below @intCast
-                try generateWASMCodeFromAst(ast, @intCast(argument_expr), source, bytecode, fn_symbol, lv);
+                try generateWASMCodeFromAst(ast, argument_expr, source, bytecode, fn_symbol, lv);
             }
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));
