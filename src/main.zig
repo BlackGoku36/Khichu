@@ -6,6 +6,7 @@ const SymbolTable = tables.SymbolTable;
 const ExprTypeTable = tables.ExprTypeTable;
 const FnTable = tables.FnTable;
 const FnCallTable = tables.FnCallTable;
+const analyzer = @import("analyzer.zig");
 
 const wasm_codegen = @import("wasm/codegen.zig");
 
@@ -45,7 +46,7 @@ pub fn main() !void {
     for (parser.ast_roots.items) |roots| {
         parser.ast.print(roots, 0, 0);
     }
-    //    parser.analyze();
+    analyzer.analyze(&parser);
     //    std.debug.print("\n------ NEW AST ------\n", .{});
     //    for (parser.ast_roots.items) |roots| {
     //        parser.ast.print(roots, 0, 0);

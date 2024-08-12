@@ -102,13 +102,17 @@ pub const ExprTypeTable = struct {
 
 pub const FnCallSymbol = struct {
     name_node: usize,
+    arguments_start: usize,
+    arguments_end: usize,
 };
 
 pub const FnCallTable = struct {
     pub var table: std.ArrayList(FnCallSymbol) = undefined;
+    pub var arguments: std.ArrayList(usize) = undefined;
 
     pub fn createTable(allocator: std.mem.Allocator) void {
         table = std.ArrayList(FnCallSymbol).init(allocator);
+        arguments = std.ArrayList(usize).init(allocator);
     }
 
     pub fn appendFunction(fn_call_symbol: FnCallSymbol) usize {
@@ -127,21 +131,31 @@ pub const FnCallTable = struct {
 
     pub fn destroyTable() void {
         table.deinit();
+        arguments.deinit();
     }
 };
 
 pub const FnSymbol = struct {
     name_node: usize,
     return_type: Type,
+    parameter_start: usize,
+    parameter_end: usize,
     body_nodes_start: usize,
     body_nodes_end: usize,
 };
 
+pub const FnParameterSymbol = struct {
+    name_node: usize,
+    parameter_type: Type,
+};
+
 pub const FnTable = struct {
     pub var table: std.ArrayList(FnSymbol) = undefined;
+    pub var parameters: std.ArrayList(FnParameterSymbol) = undefined;
 
     pub fn createTable(allocator: std.mem.Allocator) void {
         table = std.ArrayList(FnSymbol).init(allocator);
+        parameters = std.ArrayList(FnParameterSymbol).init(allocator);
     }
 
     pub fn appendFunction(fn_symbol: FnSymbol) usize {
@@ -191,5 +205,6 @@ pub const FnTable = struct {
 
     pub fn destroyTable() void {
         table.deinit();
+        parameters.deinit();
     }
 };

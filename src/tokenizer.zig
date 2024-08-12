@@ -43,6 +43,7 @@ pub const TokenType = enum {
     @"fn",
     void_type,
     @"return",
+    comma,
     eof,
 
     pub fn str(token_type: TokenType) []const u8 {
@@ -83,6 +84,7 @@ pub const TokenType = enum {
             .@"fn" => return "fn",
             .void_type => return "void_type",
             .@"return" => return "return",
+            .comma => return "comma",
             .eof => return "eof",
         }
     }
@@ -236,6 +238,7 @@ pub const Tokenizer = struct {
                 '}' => tokenizer.add_token(.right_brace),
                 ':' => tokenizer.add_token(.colon),
                 ';' => tokenizer.add_token(.semi_colon),
+                ',' => tokenizer.add_token(.comma),
                 ' ' => {},
                 '\r' => {},
                 '\t' => {},
