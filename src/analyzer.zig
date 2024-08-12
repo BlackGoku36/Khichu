@@ -274,14 +274,6 @@ pub fn analyse_block(parser: *Parser, root_idx: usize) void {
                     analyse_type_semantic(parser, argument_node_idx);
                 }
             },
-            .fn_block => {
-                const fn_block_idx = ast_node.idx;
-                const fn_block = FnTable.table.items[fn_block_idx];
-                for(fn_block.body_nodes_start..fn_block.body_nodes_end) | i | {
-                    analyse_type_semantic(parser, i);
-                    analyse_block(parser, i);
-                }
-            },
             else => {},
         }
 }
@@ -289,7 +281,17 @@ pub fn analyse_block(parser: *Parser, root_idx: usize) void {
 pub fn analyze(parser: *Parser) void {
     // Analyze
     for (parser.ast_roots.items) |root_idx| {
-        analyse_block(parser, root_idx);
+        const ast_node = parser.ast.nodes.items[root_idx];
+        switch(ast_node.type){
+            .fn_block => {
+                const fn_block_idx = ast_node.idx;
+                const fn_block = FnTable.table.items[fn_block_idx];
+                for(fn_block.body_nodes_start..fn_block.body_nodes_end) | i | {
+                    analyse_block(parser, i);
+                }
+            },
+            else => analyse_block(parser, root_idx),
+        }
     }
 }
 
