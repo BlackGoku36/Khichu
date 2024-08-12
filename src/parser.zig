@@ -100,27 +100,27 @@ pub const Parser = struct {
         const argument_start = FnCallTable.arguments.items.len;
         var argument_size: usize = 0;
 
-        while(true){
+        while (true) {
             const fn_name_token = parser.peekPrev();
-            if(parser.match(.tok_left_paren)){
-                if(parser.peek().type != .tok_right_paren){
-                    while(true){
+            if (parser.match(.tok_left_paren)) {
+                if (parser.peek().type != .tok_right_paren) {
+                    while (true) {
                         const argument = parser.expression();
-                        FnCallTable.arguments.append(argument) catch | err | {
+                        FnCallTable.arguments.append(argument) catch |err| {
                             std.debug.print("Couldn't append arguments to table: {}", .{err});
                         };
                         argument_size += 1;
-                        if(!parser.match(.tok_comma)) break;
+                        if (!parser.match(.tok_comma)) break;
                     }
                 }
-                if(!parser.match(.tok_right_paren)){
+                if (!parser.match(.tok_right_paren)) {
                     parser.reportError(parser.peekPrev().loc, "Expected ')' after expression\n", .{}, true);
                 }
                 const fn_name_node = expr;
                 const fn_idx = FnCallTable.appendFunction(.{ .name_node = fn_name_node, .arguments_start = argument_start, .arguments_end = argument_start + argument_size });
                 const loc: LocInfo = .{ .start = fn_name_token.loc.start, .end = parser.peekPrev().loc.end, .line = fn_name_token.loc.line };
                 expr = parser.ast.addLiteralNode(.ast_fn_call, fn_idx, loc);
-            }else{
+            } else {
                 break;
             }
         }
@@ -353,30 +353,30 @@ pub const Parser = struct {
         const parameter_start = FnTable.parameters.items.len;
         var parameter_size: usize = 0;
 
-        if(parser.peek().type != .tok_right_paren){
-            while(true){
+        if (parser.peek().type != .tok_right_paren) {
+            while (true) {
                 const parameter_identifier = parser.peek();
-                if(!parser.match(.tok_identifier)){
+                if (!parser.match(.tok_identifier)) {
                     parser.reportError(parameter_identifier.loc, "Expected name of parameter after '(' and before ':', found '{s}'.\n", .{parameter_identifier.type.str()}, true);
                 }
-                if(!parser.match(.tok_colon)){
+                if (!parser.match(.tok_colon)) {
                     parser.reportError(parameter_identifier.loc, "Expected ':' after parameter name and before type, found '{s}'.\n", .{parameter_identifier.type.str()}, true);
                 }
                 const parameter_type_token = parser.consume();
-                if(parameter_type_token.type != .tok_int_type and parameter_type_token.type != .tok_float_type and parameter_type_token.type != .tok_bool_type){
+                if (parameter_type_token.type != .tok_int_type and parameter_type_token.type != .tok_float_type and parameter_type_token.type != .tok_bool_type) {
                     parser.reportError(parameter_identifier.loc, "Expected type after ':' and before ')', found '{s}'.\n", .{parameter_identifier.type.str()}, true);
                 }
-                
+
                 const parameter_name_node = parser.ast.addLiteralNode(.ast_identifier, nan_u32, parameter_identifier.loc);
 
                 const parameter_type: SymbolType = typeTokenToSymbolType(parameter_type_token);
 
-                FnTable.parameters.append(.{.name_node = parameter_name_node, .parameter_type = parameter_type}) catch |err| {
+                FnTable.parameters.append(.{ .name_node = parameter_name_node, .parameter_type = parameter_type }) catch |err| {
                     std.debug.print("Unable to create entry in FnTable (parameters): {}", .{err});
                 };
                 parameter_size += 1;
 
-                if(!parser.match(.tok_comma)){
+                if (!parser.match(.tok_comma)) {
                     break;
                 }
             }
@@ -397,13 +397,7 @@ pub const Parser = struct {
         parser.block();
         const end = parser.ast_roots.items.len;
         const fn_name_node = parser.ast.addLiteralNode(.ast_identifier, nan_u32, fn_name_token.loc);
-        const fn_idx = FnTable.appendFunction(.{ 
-            .name_node = fn_name_node, 
-            .return_type = return_symbol_type,
-            .parameter_start = parameter_start,
-            .parameter_end = parameter_start + parameter_size,
-            .body_nodes_start = start, .body_nodes_end = end 
-        });
+        const fn_idx = FnTable.appendFunction(.{ .name_node = fn_name_node, .return_type = return_symbol_type, .parameter_start = parameter_start, .parameter_end = parameter_start + parameter_size, .body_nodes_start = start, .body_nodes_end = end });
         const loc: LocInfo = .{ .start = fn_token.loc.start, .end = fn_return_type_token.loc.end, .line = fn_token.loc.line };
         return parser.ast.addLiteralNode(.ast_fn_block, fn_idx, loc);
     }

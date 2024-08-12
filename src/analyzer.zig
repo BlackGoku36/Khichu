@@ -103,7 +103,7 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
         .ast_fn_call => {
             const fn_call_idx = node.idx;
             const fn_call = FnCallTable.table.items[fn_call_idx];
-            for(fn_call.arguments_start..fn_call.arguments_end) | i | {
+            for (fn_call.arguments_start..fn_call.arguments_end) |i| {
                 const argument_node_idx = FnCallTable.arguments.items[i];
                 analyse_type_semantic(parser, argument_node_idx);
             }
@@ -241,52 +241,52 @@ pub fn analyse_bool(parser: *Parser, curr_node: u32) void {
 }
 
 pub fn analyse_block(parser: *Parser, root_idx: usize) void {
-        const ast_node = parser.ast.nodes.items[root_idx];
-        switch (ast_node.type) {
-            .ast_var_stmt => {
-                const symbol_idx = ast_node.idx;
-                const symbol_entry = SymbolTable.varTable.get(symbol_idx);
-                //                    parser.analyse_bool(symbol_entry.expr_node);
-                //                    _ = parser.analyse_chain_type(symbol_entry.expr_node);
-                analyse_type_semantic(parser, symbol_entry.expr_node);
-            },
-            .ast_print_stmt => {
-                const left_idx = ast_node.left;
-                //                    parser.analyse_bool(left_idx);
-                //                    _ = parser.analyse_chain_type(left_idx);
-                analyse_type_semantic(parser, left_idx);
-            },
-            .ast_assign_stmt => {
-                const right_idx = ast_node.right;
-                //                    parser.analyse_bool(right_idx);
-                //                    _ = parser.analyse_chain_type(right_idx);
-                analyse_type_semantic(parser, right_idx);
-            },
-            .ast_fn_return => {
-                const left_idx = ast_node.left;
-                analyse_type_semantic(parser, left_idx);
-            },
-            .ast_fn_call => {
-                const fn_call_idx = ast_node.idx;
-                const fn_call = FnCallTable.table.items[fn_call_idx];
-                for(fn_call.arguments_start..fn_call.arguments_end) | i | {
-                    const argument_node_idx = FnCallTable.arguments.items[i];
-                    analyse_type_semantic(parser, argument_node_idx);
-                }
-            },
-            else => {},
-        }
+    const ast_node = parser.ast.nodes.items[root_idx];
+    switch (ast_node.type) {
+        .ast_var_stmt => {
+            const symbol_idx = ast_node.idx;
+            const symbol_entry = SymbolTable.varTable.get(symbol_idx);
+            //                    parser.analyse_bool(symbol_entry.expr_node);
+            //                    _ = parser.analyse_chain_type(symbol_entry.expr_node);
+            analyse_type_semantic(parser, symbol_entry.expr_node);
+        },
+        .ast_print_stmt => {
+            const left_idx = ast_node.left;
+            //                    parser.analyse_bool(left_idx);
+            //                    _ = parser.analyse_chain_type(left_idx);
+            analyse_type_semantic(parser, left_idx);
+        },
+        .ast_assign_stmt => {
+            const right_idx = ast_node.right;
+            //                    parser.analyse_bool(right_idx);
+            //                    _ = parser.analyse_chain_type(right_idx);
+            analyse_type_semantic(parser, right_idx);
+        },
+        .ast_fn_return => {
+            const left_idx = ast_node.left;
+            analyse_type_semantic(parser, left_idx);
+        },
+        .ast_fn_call => {
+            const fn_call_idx = ast_node.idx;
+            const fn_call = FnCallTable.table.items[fn_call_idx];
+            for (fn_call.arguments_start..fn_call.arguments_end) |i| {
+                const argument_node_idx = FnCallTable.arguments.items[i];
+                analyse_type_semantic(parser, argument_node_idx);
+            }
+        },
+        else => {},
+    }
 }
 
 pub fn analyze(parser: *Parser) void {
     // Analyze
     for (parser.ast_roots.items) |root_idx| {
         const ast_node = parser.ast.nodes.items[root_idx];
-        switch(ast_node.type){
+        switch (ast_node.type) {
             .ast_fn_block => {
                 const fn_block_idx = ast_node.idx;
                 const fn_block = FnTable.table.items[fn_block_idx];
-                for(fn_block.body_nodes_start..fn_block.body_nodes_end) | i | {
+                for (fn_block.body_nodes_start..fn_block.body_nodes_end) |i| {
                     analyse_block(parser, i);
                 }
             },
@@ -300,9 +300,9 @@ fn getTypeFromIdentifierName(parser: *Parser, name: []u8) SymbolType {
     if (SymbolTable.findByName(name)) |sym| {
         return sym.type;
     }
-    
+
     // Try function's return
-    for (FnTable.table.items) | fn_symbol | {
+    for (FnTable.table.items) |fn_symbol| {
         const name_node = parser.ast.nodes.items[fn_symbol.name_node];
         const fn_name = parser.source[name_node.loc.start..name_node.loc.end];
         std.debug.print("fn_name = {s}\n", .{fn_name});
@@ -313,8 +313,8 @@ fn getTypeFromIdentifierName(parser: *Parser, name: []u8) SymbolType {
     }
 
     // Try function's parameters
-    for(FnTable.table.items) | fn_symbol | {
-        for(fn_symbol.parameter_start..fn_symbol.parameter_end) | i | {
+    for (FnTable.table.items) |fn_symbol| {
+        for (fn_symbol.parameter_start..fn_symbol.parameter_end) |i| {
             const parameter = FnTable.parameters.items[i];
             const parameter_node = parser.ast.nodes.items[parameter.name_node];
             const parameter_name = parser.source[parameter_node.loc.start..parameter_node.loc.end];
@@ -323,5 +323,5 @@ fn getTypeFromIdentifierName(parser: *Parser, name: []u8) SymbolType {
             }
         }
     }
-    unreachable; 
+    unreachable;
 }
