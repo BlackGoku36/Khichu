@@ -1,6 +1,19 @@
 # Khichu
 
-[Khichu](https://en.wikipedia.org/wiki/Khichu) is experimental programming language that targets WASM and a custom register-based VM.
+[Khichu](https://en.wikipedia.org/wiki/Khichu) is experimental programming language that targets WASM and a custom register-based VM (TODO). We do our own code-generation from scratch instead of relying on LLVM or similar code-generation technologies.
+
+This is project done during free time.
+
+## Compile and Run
+
+Write the code in `test.ul` and do:
+
+```
+# Zig 0.13
+zig build run
+```
+
+---
 
 ## TODO
 
@@ -48,15 +61,6 @@ x: float = 8.2 + 2.1 / 3.8;
 - [Part-5](https://coinexsmartchain.medium.com/wasm-introduction-part-5-control-instructions-1cc21a180618)
 - [Part-6](https://coinexsmartchain.medium.com/wasm-introduction-part-6-table-indirect-call-65ad0404b003)
 - [Part-7](https://coinexsmartchain.medium.com/wasm-introduction-part-7-text-format-2d608e50daab)
-
-## Compile and Run
-
-Write the code in `test.ul` and do:
-
-```
-# Zig 0.13
-zig build run
-```
 
 ## Plan
 
