@@ -51,3 +51,6 @@ fn main() void {
     print(x);
 }
 ```
+
+NOTE: Calling function in function arguments now works, but calling function in print() doesn't because it is not a real function.
+TODO: Make print() a real function, by introducting some sort of foreign object concepts (able to export/import functions/variables)

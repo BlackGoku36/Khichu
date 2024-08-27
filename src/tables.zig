@@ -102,17 +102,15 @@ pub const ExprTypeTable = struct {
 
 pub const FnCallSymbol = struct {
     name_node: usize,
-    arguments_start: usize,
-    arguments_end: usize,
+    arguments: [10]usize,
+    arguments_len: usize = 0,
 };
 
 pub const FnCallTable = struct {
     pub var table: std.ArrayList(FnCallSymbol) = undefined;
-    pub var arguments: std.ArrayList(usize) = undefined;
 
     pub fn createTable(allocator: std.mem.Allocator) void {
         table = std.ArrayList(FnCallSymbol).init(allocator);
-        arguments = std.ArrayList(usize).init(allocator);
     }
 
     pub fn appendFunction(fn_call_symbol: FnCallSymbol) usize {
@@ -125,13 +123,17 @@ pub const FnCallTable = struct {
     pub fn printFunctions(source: []u8, ast: Ast) void {
         for (0.., table.items) |i, function| {
             const name = ast.nodes.items[function.name_node];
-            std.debug.print("{d}: {s}\n", .{ i, source[name.loc.start..name.loc.end] });
+            std.debug.print("Function: {d}: {s}\n", .{ i, source[name.loc.start..name.loc.end] });
+            const args_len = function.arguments_len;
+            for(0..args_len) |arg_idx| {
+                const arg_name = ast.nodes.items[function.arguments[arg_idx]];
+                std.debug.print("Argument: {d}: {s}\n", .{ arg_idx, source[arg_name.loc.start..arg_name.loc.end] });
+            }
         }
     }
 
     pub fn destroyTable() void {
         table.deinit();
-        arguments.deinit();
     }
 };
 
@@ -182,8 +184,6 @@ pub const FnTable = struct {
             const call_name = ast.nodes.items[fn_call_name_node];
             const function_name = source[name.loc.start..name.loc.end];
             const function_call_name = source[call_name.loc.start..call_name.loc.end];
-            std.debug.print("function_name: {s}\n", .{function_name});
-            std.debug.print("function_call_name: {s}\n", .{function_call_name});
             if (std.mem.eql(u8, function_name, function_call_name)) {
                 return @intCast(i);
             }
@@ -194,7 +194,10 @@ pub const FnTable = struct {
     pub fn printFunctions(source: []u8, ast: Ast) void {
         for (0.., table.items) |i, function| {
             const name = ast.nodes.items[function.name_node];
-            std.debug.print("{d}: {s}\n", .{ i, source[name.loc.start..name.loc.end] });
+            std.debug.print("Function {d}: {s}\n", .{ i, source[name.loc.start..name.loc.end] });
+            for (function.parameter_start..function.parameter_end) |param_idx| {
+                std.debug.print("Parameter {d}: {any}\n", .{ param_idx, parameters.items[param_idx].parameter_type });
+            }
             std.debug.print("nodes: ", .{});
             for (function.body_nodes_start..function.body_nodes_end) |node_idx| {
                 std.debug.print("{d}, ", .{node_idx});

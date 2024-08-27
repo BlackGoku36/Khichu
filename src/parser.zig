@@ -97,19 +97,24 @@ pub const Parser = struct {
     fn call(parser: *Parser) u32 {
         var expr = parser.primary();
 
-        const argument_start = FnCallTable.arguments.items.len;
-        var argument_size: usize = 0;
-
         while (true) {
             const fn_name_token = parser.peekPrev();
+
             if (parser.match(.tok_left_paren)) {
+                var args: [10]usize = .{0} ** 10;
+                var args_len: usize = 0;
                 if (parser.peek().type != .tok_right_paren) {
                     while (true) {
+                        if(args_len + 1 >= 10){
+                            //TODO: Same error for when function is declared with 10+ parameters
+                            parser.reportError(parser.peekPrev().loc, "Amount of arguments passed exceeded limit 10.\n", .{}, true);
+                        }
+
                         const argument = parser.expression();
-                        FnCallTable.arguments.append(argument) catch |err| {
-                            std.debug.print("Couldn't append arguments to table: {}", .{err});
-                        };
-                        argument_size += 1;
+                        args[args_len] = argument;
+                        args_len += 1;
+                        
+
                         if (!parser.match(.tok_comma)) break;
                     }
                 }
@@ -117,8 +122,8 @@ pub const Parser = struct {
                     parser.reportError(parser.peekPrev().loc, "Expected ')' after expression\n", .{}, true);
                 }
                 const fn_name_node = expr;
-                const fn_idx = FnCallTable.appendFunction(.{ .name_node = fn_name_node, .arguments_start = argument_start, .arguments_end = argument_start + argument_size });
-                const loc: LocInfo = .{ .start = fn_name_token.loc.start, .end = parser.peekPrev().loc.end, .line = fn_name_token.loc.line };
+                const fn_idx = FnCallTable.appendFunction(.{ .name_node = fn_name_node, .arguments = args, .arguments_len = args_len });
+                const loc: LocInfo = .{ .start = fn_name_token.loc.start, .end = fn_name_token.loc.end, .line = fn_name_token.loc.line };
                 expr = parser.ast.addLiteralNode(.ast_fn_call, fn_idx, loc);
             } else {
                 break;

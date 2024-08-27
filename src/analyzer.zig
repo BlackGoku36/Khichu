@@ -103,8 +103,9 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
         .ast_fn_call => {
             const fn_call_idx = node.idx;
             const fn_call = FnCallTable.table.items[fn_call_idx];
-            for (fn_call.arguments_start..fn_call.arguments_end) |i| {
-                const argument_node_idx = FnCallTable.arguments.items[i];
+        
+            for (0..fn_call.arguments_len) |i| {
+                const argument_node_idx = fn_call.arguments[i];
                 analyse_type_semantic(parser, argument_node_idx);
             }
         },
@@ -269,8 +270,9 @@ pub fn analyse_block(parser: *Parser, root_idx: usize) void {
         .ast_fn_call => {
             const fn_call_idx = ast_node.idx;
             const fn_call = FnCallTable.table.items[fn_call_idx];
-            for (fn_call.arguments_start..fn_call.arguments_end) |i| {
-                const argument_node_idx = FnCallTable.arguments.items[i];
+        
+            for (0..fn_call.arguments_len) |i| {
+                const argument_node_idx = fn_call.arguments[i];
                 analyse_type_semantic(parser, argument_node_idx);
             }
         },

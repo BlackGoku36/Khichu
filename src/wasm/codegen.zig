@@ -2,6 +2,7 @@ const std = @import("std");
 const leb = std.leb;
 
 const Ast = @import("../ast.zig").Ast;
+const AstType = @import("../ast.zig").Type;
 const tables = @import("../tables.zig");
 const SymbolTable = tables.SymbolTable;
 const ExprTypeTable = tables.ExprTypeTable;
@@ -435,12 +436,12 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: usize, source: []u8, bytecode: *
             const current_node_idx = ast.nodes.items[node_idx].idx;
             const function_call_table = FnCallTable.table.items[current_node_idx];
             const function_idx = function_call_table.name_node;
-            // const function_lit_node = ast.nodes.items[function_idx];
             const out_idx = try FnTable.getFunctionIdx(function_idx, source, ast.*);
 
-            for (function_call_table.arguments_start..function_call_table.arguments_end) |i| {
-                const argument_expr = FnCallTable.arguments.items[i];
-                try generateWASMCodeFromAst(ast, argument_expr, source, bytecode, fn_symbol, lv);
+            const args = function_call_table.arguments;
+            const args_len = function_call_table.arguments_len;
+            for(0..args_len) |args_idx| {
+                try generateWASMCodeFromAst(ast, args[args_idx], source, bytecode, fn_symbol, lv);
             }
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));
@@ -542,10 +543,12 @@ pub fn generateWASMCode(ast: *Ast, node_idx: usize, source: []u8, bytecode: *std
             const function_call_table = FnCallTable.table.items[current_node_idx];
             const function_idx = function_call_table.name_node;
             const out_idx = try FnTable.getFunctionIdx(function_idx, source, ast.*);
+    
+            const args = function_call_table.arguments;
+            const args_len = function_call_table.arguments_len;
 
-            for (function_call_table.arguments_start..function_call_table.arguments_end) |i| {
-                const argument_expr = FnCallTable.arguments.items[i];
-                try generateWASMCodeFromAst(ast, argument_expr, source, bytecode, fn_symbol, lv);
+            for(0..args_len) |args_idx| {
+                try generateWASMCodeFromAst(ast, args[args_idx], source, bytecode, fn_symbol, lv);
             }
 
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.call));

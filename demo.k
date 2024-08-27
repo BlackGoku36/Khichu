@@ -4,7 +4,7 @@
 //    var y: float = 3.0;
 //    print(x + y);
 //}
-
+//
 //fn main() void {
 //    var x: float = 3.0;
 //    var y: float = 4.0;
@@ -53,7 +53,7 @@
 //    print(ref);
 //    var b: bool = false;
 //}
-//
+
 
 //fn main() void {
 //    var x: float = 3.0;
@@ -88,19 +88,46 @@
 
 fn main() void {
     var x: float = 3.3;
-    var y: int = 4;
+    //var y: int = 4;
 
     x = incrementFloat(incrementFloat(x));
-    y = incrementInt(y);
+    //y = incrementInt(y);
 
     print(x);
-    print(y);
+    //print(y);
 }
 
-fn incrementInt(a: int) int {
-    return a + 1;
-}
-
+//fn incrementInt(a: int) int {
+//    return a + 1;
+//}
+//
 fn incrementFloat(b: float) float {
     return b + 1.0;
 }
+
+//fn main() void {
+//    var x: float = 3.3;
+//    printVar(incrementFloat(x));
+//}
+//
+//fn incrementFloat(a: float) float {
+//    return a + 1.0;
+//}
+//
+//fn printVar(b: float) void {
+//    print(b);
+//}
+
+//fn main() void {
+//    var x: float = 3.3;
+//    x = blahFloat(incrementFloat(x));
+//    print(x);
+//}
+//
+//fn incrementFloat(a: float) float {
+//    return a + 1.0;
+//}
+//
+//fn blahFloat(b: float) float {
+//    return b + 1.0;
+//}

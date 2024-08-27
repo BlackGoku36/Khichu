@@ -46,6 +46,12 @@ pub fn main() !void {
     for (parser.ast_roots.items) |roots| {
         parser.ast.print(roots, 0, 0);
     }
+    //    for (FnTable.table.items) |fn_block|{
+    //        for(fn_block.body_nodes_start..fn_block.body_nodes_end) |node_i| {
+    //            //const fn_body_node = parser.ast.nodes.items[node_i];
+    //            parser.ast.print(@intCast(node_i), 0, 0);
+    //        }
+    //    }
     analyzer.analyze(&parser);
     //    std.debug.print("\n------ NEW AST ------\n", .{});
     //    for (parser.ast_roots.items) |roots| {
@@ -63,6 +69,9 @@ pub fn main() !void {
 
     std.debug.print("\n------ FN CALL TABLE -------\n", .{});
     FnCallTable.printFunctions(source, parser.ast);
+    
+    std.debug.print("\n-----------------------------\n", .{});
+
 
     var out_file = try std.fs.cwd().createFile("out.wasm", .{});
     defer out_file.close();
