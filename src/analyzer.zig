@@ -31,7 +31,7 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
 
     // TODO: I forgot why I keep checking left/right exist for operations?
     switch (node.type) {
-        .ast_add, .ast_sub, .ast_mult, .ast_div, .ast_bool_not, .ast_bool_and, .ast_bool_or => {
+        .ast_add, .ast_sub, .ast_mult, .ast_div, .ast_bool_not, .ast_bool_and, .ast_bool_or, .ast_lesser, .ast_lesser_equal, .ast_greater, .ast_greater_equal, .ast_equal_equal => {
             if (left_exist and right_exist) {
                 var left_type: SymbolType = undefined;
                 var right_type: SymbolType = undefined;
@@ -45,7 +45,7 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
                     .ast_int_literal => left_type = .t_int,
                     .ast_float_literal => left_type = .t_float,
                     .ast_bool_literal => left_type = .t_bool,
-                    .ast_add, .ast_sub, .ast_mult, .ast_div, .ast_negate, .ast_bool_not, .ast_bool_and, .ast_bool_or => {
+                    .ast_add, .ast_sub, .ast_mult, .ast_div, .ast_bool_not, .ast_bool_and, .ast_bool_or, .ast_lesser, .ast_lesser_equal, .ast_greater, .ast_greater_equal, .ast_equal_equal => {
                         left_type = ExprTypeTable.table.items[left_node.idx].type;
                     },
                     else => {
@@ -60,7 +60,7 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
                     .ast_int_literal => right_type = .t_int,
                     .ast_float_literal => right_type = .t_float,
                     .ast_bool_literal => right_type = .t_bool,
-                    .ast_add, .ast_sub, .ast_mult, .ast_div, .ast_negate, .ast_bool_not, .ast_bool_and, .ast_bool_or => {
+                    .ast_add, .ast_sub, .ast_mult, .ast_div, .ast_bool_not, .ast_bool_and, .ast_bool_or, .ast_lesser, .ast_lesser_equal, .ast_greater, .ast_greater_equal, .ast_equal_equal => {
                         right_type = ExprTypeTable.table.items[right_node.idx].type;
                     },
                     else => {

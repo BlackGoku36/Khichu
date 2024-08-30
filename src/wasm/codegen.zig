@@ -397,12 +397,12 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: usize, source: []u8, bytecode: *
                 }
             }
         },
-        // .greater => pool.emitBytecodeOp(.op_greater),
-        // .lesser => pool.emitBytecodeOp(.op_less),
-        // .greater_equal => pool.emitBytecodeOp(.op_greater_than),
-        // .lesser_equal => pool.emitBytecodeOp(.op_less_than),
-        // .equal_equal => pool.emitBytecodeOp(.op_equal),
-        // .not_equal => pool.emitBytecodeOp(.op_not_equal),
+        .ast_greater => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_gt_s)),
+        .ast_lesser => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_lt_s)),
+        .ast_greater_equal => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_ge_s)),
+        .ast_lesser_equal => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_le_s)),
+        .ast_equal_equal => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_eq)),
+        .ast_not_equal => try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_ne)),
         .ast_identifier => {
             const name: []u8 = source[ast.nodes.items[node_idx].loc.start..ast.nodes.items[node_idx].loc.end];
             var lv_index: usize = nan_u64;
