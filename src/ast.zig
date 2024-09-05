@@ -29,6 +29,7 @@ pub const Type = enum {
     ast_fn_call,
     ast_fn_return,
     ast_if,
+    ast_while,
 
     pub fn strType(ast_type: Type) []const u8 {
         switch (ast_type) {
@@ -68,6 +69,7 @@ pub const Type = enum {
             .ast_fn_call => return "fn_call",
             .ast_fn_return => return "fn_return",
             .ast_if => return "if",
+            .ast_while => return "while",
         }
     }
 };

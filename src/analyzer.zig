@@ -280,6 +280,7 @@ pub fn analyse_block(parser: *Parser, root_idx: usize) void {
         },
         .ast_if => {
             const if_idx = ast_node.idx;
+            analyse_type_semantic(parser, ast_node.left);
             const if_symbol = IfTable.table.items[if_idx];
             const if_scope = MultiScopeTable.table.items[if_symbol.if_scope_idx];
             const else_scope = MultiScopeTable.table.items[if_symbol.else_scope_idx];
@@ -287,6 +288,14 @@ pub fn analyse_block(parser: *Parser, root_idx: usize) void {
                 analyse_block(parser, idx);
             }
             for (else_scope.table.items) |idx| {
+                analyse_block(parser, idx);
+            }
+        },
+        .ast_while => {
+            const while_idx = ast_node.idx;
+            analyse_type_semantic(parser, ast_node.left);
+            const while_scope = MultiScopeTable.table.items[while_idx];
+            for (while_scope.table.items) |idx| {
                 analyse_block(parser, idx);
             }
         },

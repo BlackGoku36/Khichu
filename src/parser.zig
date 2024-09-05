@@ -320,6 +320,9 @@ pub const Parser = struct {
                 .tok_if => {
                     scope.appendNode(parser.ifStatement());
                 },
+                .tok_while => {
+                    scope.appendNode(parser.whileStatement());
+                },
                 else => {
                     scope.appendNode(parser.expressionStatement());
                 },
@@ -426,6 +429,23 @@ pub const Parser = struct {
         const if_idx = IfTable.appendIf(if_symbol);
         const loc: LocInfo = .{ .start = if_token.loc.start, .end = if_token.loc.end, .line = if_token.loc.line };
         return parser.ast.addUnaryNode(.ast_if, if_idx, expr, loc);
+    }
+
+    fn whileStatement(parser: *Parser) u32 {
+        const while_token = parser.consume();
+        if (!parser.match(.tok_left_paren)) {
+            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'while', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
+        }
+        const expr = parser.expression();
+        if (!parser.match(.tok_right_paren)) {
+            parser.reportError(parser.peekPrev().loc, "Expected ')' after expression, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
+        }
+        const while_scope_idx = MultiScopeTable.createScope();
+        const while_scope = &MultiScopeTable.table.items[while_scope_idx];
+        parser.block(while_scope);
+
+        const loc: LocInfo = .{ .start = while_token.loc.start, .end = while_token.loc.end, .line = while_token.loc.line };
+        return parser.ast.addUnaryNode(.ast_while, while_scope_idx, expr, loc);
     }
 
     pub fn reportError(parser: *Parser, loc: LocInfo, comptime str: []const u8, args: anytype, exit: bool) void {

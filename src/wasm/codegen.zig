@@ -584,6 +584,36 @@ pub fn generateWASMCode(ast: *Ast, node_idx: usize, source: []u8, bytecode: *std
             }
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.end));
         },
+        .ast_while => {
+            const expr_idx = ast.nodes.items[node_idx].left;
+            const while_scope_idx = ast.nodes.items[node_idx].idx;
+            const while_scope = MultiScopeTable.table.items[while_scope_idx];
+
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.block));
+            try bytecode.append(0x40);
+
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.loop));
+            try bytecode.append(0x40);
+
+            try generateWASMCodeFromAst(ast, expr_idx, source, bytecode, fn_symbol, lv);
+
+            // BOOL NOT
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_const));
+            try bytecode.append(0x01);
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.i32_xor));
+
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.br_if));
+            try leb.writeULEB128(bytecode_writer, @as(usize, 0x01));
+            for (while_scope.table.items) |while_body_idx| {
+                try generateWASMCode(ast, while_body_idx, source, bytecode, locals, fn_symbol, lv);
+            }
+
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.br));
+            try leb.writeULEB128(bytecode_writer, @as(usize, 0x00));
+
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.end));
+            try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.end));
+        },
         else => {},
     }
 }
