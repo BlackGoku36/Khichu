@@ -105,7 +105,7 @@ pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
         .ast_fn_call => {
             const fn_call_idx = node.idx;
             const fn_call = FnCallTable.table.items[fn_call_idx];
-        
+
             for (0..fn_call.arguments_len) |i| {
                 const argument_node_idx = fn_call.arguments[i];
                 analyse_type_semantic(parser, argument_node_idx);
@@ -272,7 +272,7 @@ pub fn analyse_block(parser: *Parser, root_idx: usize) void {
         .ast_fn_call => {
             const fn_call_idx = ast_node.idx;
             const fn_call = FnCallTable.table.items[fn_call_idx];
-        
+
             for (0..fn_call.arguments_len) |i| {
                 const argument_node_idx = fn_call.arguments[i];
                 analyse_type_semantic(parser, argument_node_idx);
@@ -283,10 +283,10 @@ pub fn analyse_block(parser: *Parser, root_idx: usize) void {
             const if_symbol = IfTable.table.items[if_idx];
             const if_scope = MultiScopeTable.table.items[if_symbol.if_scope_idx];
             const else_scope = MultiScopeTable.table.items[if_symbol.else_scope_idx];
-            for(if_scope.table.items) |idx| {
+            for (if_scope.table.items) |idx| {
                 analyse_block(parser, idx);
             }
-            for(else_scope.table.items) |idx| {
+            for (else_scope.table.items) |idx| {
                 analyse_block(parser, idx);
             }
         },
@@ -319,7 +319,6 @@ pub fn analyze(parser: *Parser) void {
                 for (else_scope.table.items) |idx| {
                     analyse_block(parser, idx);
                 }
-            
             },
             else => analyse_block(parser, root_idx),
         }

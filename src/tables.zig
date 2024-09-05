@@ -125,7 +125,7 @@ pub const FnCallTable = struct {
             const name = ast.nodes.items[function.name_node];
             std.debug.print("Function: {d}: {s}\n", .{ i, source[name.loc.start..name.loc.end] });
             const args_len = function.arguments_len;
-            for(0..args_len) |arg_idx| {
+            for (0..args_len) |arg_idx| {
                 const arg_name = ast.nodes.items[function.arguments[arg_idx]];
                 std.debug.print("Argument: {d}: {s}\n", .{ arg_idx, source[arg_name.loc.start..arg_name.loc.end] });
             }
@@ -199,7 +199,7 @@ pub const FnTable = struct {
             }
             std.debug.print("nodes: ", .{});
             const scope_table = MultiScopeTable.table.items[function.scope_idx];
-            for(scope_table.table.items) |node_idx|{
+            for (scope_table.table.items) |node_idx| {
                 std.debug.print("{d}, ", .{node_idx});
             }
             std.debug.print("\n", .{});
@@ -233,15 +233,14 @@ pub const IfTable = struct {
 
     pub fn printIfs() void {
         for (0.., table.items) |i, if_symbol| {
-            std.debug.print("{d}. if scope: {d}\n", .{i, if_symbol.if_scope_idx});
-            std.debug.print("{d}. else scope: {d}\n", .{i, if_symbol.else_scope_idx});
+            std.debug.print("{d}. if scope: {d}\n", .{ i, if_symbol.if_scope_idx });
+            std.debug.print("{d}. else scope: {d}\n", .{ i, if_symbol.else_scope_idx });
         }
     }
 
     pub fn destroyTable() void {
         table.deinit();
     }
-
 };
 
 pub const ScopeTable = struct {
@@ -254,11 +253,11 @@ pub const ScopeTable = struct {
     }
 
     pub fn appendNode(scope: *ScopeTable, node: usize) void {
-        scope.table.append(node) catch | err | {
+        scope.table.append(node) catch |err| {
             std.debug.print("Unable to create node entry in scope table: {}", .{err});
-        }; 
+        };
     }
-    
+
     pub fn destroyTable(scope: *const ScopeTable) void {
         scope.table.deinit();
     }
@@ -279,7 +278,7 @@ pub const MultiScopeTable = struct {
         };
         return table.items.len - 1;
     }
-    
+
     pub fn destroyTable() void {
         for (table.items) |scope| {
             scope.destroyTable();

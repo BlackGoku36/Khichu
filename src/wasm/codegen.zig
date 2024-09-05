@@ -258,7 +258,7 @@ fn generateWASM(parser: *Parser, source: []u8, fn_: FnSymbol, allocator: std.mem
     var bytecode: std.ArrayList(Inst) = std.ArrayList(Inst).init(allocator);
     var locals: std.ArrayList(Local) = std.ArrayList(Local).init(allocator);
     const scope = MultiScopeTable.table.items[fn_.scope_idx];
-    for(scope.table.items) |node_idx| {
+    for (scope.table.items) |node_idx| {
         try generateWASMCode(&parser.ast, node_idx, source, &bytecode, &locals, fn_, &lv);
     }
 
@@ -443,7 +443,7 @@ fn generateWASMCodeFromAst(ast: *Ast, node_idx: usize, source: []u8, bytecode: *
 
             const args = function_call_table.arguments;
             const args_len = function_call_table.arguments_len;
-            for(0..args_len) |args_idx| {
+            for (0..args_len) |args_idx| {
                 try generateWASMCodeFromAst(ast, args[args_idx], source, bytecode, fn_symbol, lv);
             }
 
@@ -546,11 +546,11 @@ pub fn generateWASMCode(ast: *Ast, node_idx: usize, source: []u8, bytecode: *std
             const function_call_table = FnCallTable.table.items[current_node_idx];
             const function_idx = function_call_table.name_node;
             const out_idx = try FnTable.getFunctionIdx(function_idx, source, ast.*);
-    
+
             const args = function_call_table.arguments;
             const args_len = function_call_table.arguments_len;
 
-            for(0..args_len) |args_idx| {
+            for (0..args_len) |args_idx| {
                 try generateWASMCodeFromAst(ast, args[args_idx], source, bytecode, fn_symbol, lv);
             }
 
@@ -566,22 +566,21 @@ pub fn generateWASMCode(ast: *Ast, node_idx: usize, source: []u8, bytecode: *std
             const expr_idx = ast.nodes.items[node_idx].left;
             const if_table_idx = ast.nodes.items[node_idx].idx;
             const if_symbol = IfTable.table.items[if_table_idx];
-            
+
             try generateWASMCodeFromAst(ast, expr_idx, source, bytecode, fn_symbol, lv);
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.@"if"));
             try bytecode_writer.writeByte(0x40);
             const if_scope = MultiScopeTable.table.items[if_symbol.if_scope_idx];
-            for(if_scope.table.items) |if_body_idx| {
+            for (if_scope.table.items) |if_body_idx| {
                 try generateWASMCode(ast, if_body_idx, source, bytecode, locals, fn_symbol, lv);
             }
 
-            if(if_symbol.else_scope_idx != nan_u64) {
+            if (if_symbol.else_scope_idx != nan_u64) {
                 try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.@"else"));
                 const else_scope = MultiScopeTable.table.items[if_symbol.else_scope_idx];
-                for(else_scope.table.items) |else_body_idx| {
+                for (else_scope.table.items) |else_body_idx| {
                     try generateWASMCode(ast, else_body_idx, source, bytecode, locals, fn_symbol, lv);
                 }
-
             }
             try leb.writeULEB128(bytecode_writer, @intFromEnum(OpCode.end));
         },

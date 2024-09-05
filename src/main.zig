@@ -76,9 +76,8 @@ pub fn main() !void {
 
     std.debug.print("\n------ IFs TABLE -------\n", .{});
     IfTable.printIfs();
-    
-    std.debug.print("\n-----------------------------\n", .{});
 
+    std.debug.print("\n-----------------------------\n", .{});
 
     var out_file = try std.fs.cwd().createFile("out.wasm", .{});
     defer out_file.close();

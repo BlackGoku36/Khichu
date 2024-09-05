@@ -165,8 +165,7 @@ pub const Tokenizer = struct {
     }
 
     fn parseIdentifier(tokenizer: *Tokenizer) TokenType {
-        const reserved = [_]TokenType{ .tok_true, .tok_false, .tok_var, .tok_print, .tok_int_type, .tok_float_type, .tok_bool_type, .tok_fn, .tok_void_type, 
-            .tok_return, .tok_if, .tok_else };
+        const reserved = [_]TokenType{ .tok_true, .tok_false, .tok_var, .tok_print, .tok_int_type, .tok_float_type, .tok_bool_type, .tok_fn, .tok_void_type, .tok_return, .tok_if, .tok_else };
 
         var out_token_type: TokenType = .tok_identifier;
 

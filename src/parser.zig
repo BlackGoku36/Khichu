@@ -110,7 +110,7 @@ pub const Parser = struct {
                 var args_len: usize = 0;
                 if (parser.peek().type != .tok_right_paren) {
                     while (true) {
-                        if(args_len + 1 >= 10){
+                        if (args_len + 1 >= 10) {
                             //TODO: Same error for when function is declared with 10+ parameters
                             parser.reportError(parser.peekPrev().loc, "Amount of arguments passed exceeded limit 10.\n", .{}, true);
                         }
@@ -118,7 +118,6 @@ pub const Parser = struct {
                         const argument = parser.expression();
                         args[args_len] = argument;
                         args_len += 1;
-                        
 
                         if (!parser.match(.tok_comma)) break;
                     }
@@ -406,25 +405,24 @@ pub const Parser = struct {
 
     fn ifStatement(parser: *Parser) u32 {
         const if_token = parser.consume();
-        if(!parser.match(.tok_left_paren)){
+        if (!parser.match(.tok_left_paren)) {
             parser.reportError(parser.peekPrev().loc, "Expected '(' after 'if', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         const expr = parser.expression();
-        if(!parser.match(.tok_right_paren)){
+        if (!parser.match(.tok_right_paren)) {
             parser.reportError(parser.peekPrev().loc, "Expected ')' after expression, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         const if_scope_idx = MultiScopeTable.createScope();
         const if_scope = &MultiScopeTable.table.items[if_scope_idx];
         parser.block(if_scope);
-       
+
         var else_scope_idx: usize = nan_u64;
-        if(parser.match(.tok_else)){
+        if (parser.match(.tok_else)) {
             else_scope_idx = MultiScopeTable.createScope();
             const else_scope = &MultiScopeTable.table.items[else_scope_idx];
             parser.block(else_scope);
-            
         }
-        const if_symbol: IfSymbol = .{.if_scope_idx = if_scope_idx, .else_scope_idx = else_scope_idx};
+        const if_symbol: IfSymbol = .{ .if_scope_idx = if_scope_idx, .else_scope_idx = else_scope_idx };
         const if_idx = IfTable.appendIf(if_symbol);
         const loc: LocInfo = .{ .start = if_token.loc.start, .end = if_token.loc.end, .line = if_token.loc.line };
         return parser.ast.addUnaryNode(.ast_if, if_idx, expr, loc);
