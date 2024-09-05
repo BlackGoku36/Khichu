@@ -1,5 +1,11 @@
 fn main() void {
-    var x: int = 4;
-    var y: bool = x >= 3;
-    print(y);
+    if(5 > 3) {
+        if(2 > 5){
+            print(2);
+        }else {
+            print(5);
+        }
+    } else {
+        print(3);
+    }
 }

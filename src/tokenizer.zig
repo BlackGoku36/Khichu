@@ -36,6 +36,8 @@ pub const TokenType = enum {
     tok_bool,
     tok_identifier,
     tok_var,
+    tok_if,
+    tok_else,
     tok_print,
     tok_int_type,
     tok_float_type,
@@ -77,6 +79,8 @@ pub const TokenType = enum {
             .tok_bool => return "bool",
             .tok_identifier => return "identifier",
             .tok_var => return "var",
+            .tok_if => return "if",
+            .tok_else => return "else",
             .tok_print => return "print",
             .tok_int_type => return "int_type",
             .tok_float_type => return "float_type",
@@ -92,6 +96,8 @@ pub const TokenType = enum {
     pub fn reservedStr(token_type: TokenType) []const u8 {
         switch (token_type) {
             .tok_var => return "var",
+            .tok_if => return "if",
+            .tok_else => return "else",
             .tok_print => return "print",
             .tok_int_type => return "int",
             .tok_float_type => return "float",
@@ -159,7 +165,8 @@ pub const Tokenizer = struct {
     }
 
     fn parseIdentifier(tokenizer: *Tokenizer) TokenType {
-        const reserved = [_]TokenType{ .tok_true, .tok_false, .tok_var, .tok_print, .tok_int_type, .tok_float_type, .tok_bool_type, .tok_fn, .tok_void_type, .tok_return };
+        const reserved = [_]TokenType{ .tok_true, .tok_false, .tok_var, .tok_print, .tok_int_type, .tok_float_type, .tok_bool_type, .tok_fn, .tok_void_type, 
+            .tok_return, .tok_if, .tok_else };
 
         var out_token_type: TokenType = .tok_identifier;
 

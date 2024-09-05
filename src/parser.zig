@@ -14,8 +14,13 @@ const ExprTypeTable = tables.ExprTypeTable;
 const FnTable = tables.FnTable;
 const FnCallTable = tables.FnCallTable;
 const FnParameterSymbol = tables.FnParameterSymbol;
+const IfSymbol = tables.IfSymbol;
+const IfTable = tables.IfTable;
+const MultiScopeTable = tables.MultiScopeTable;
+const ScopeTable = tables.ScopeTable;
 
 const nan_u32 = 0x7FC00000;
+const nan_u64 = 0x7FF8000000000000;
 
 pub const Parser = struct {
     current: u32,
@@ -298,35 +303,26 @@ pub const Parser = struct {
         return parser.ast.addUnaryNode(.ast_print_stmt, nan_u32, expr_node, loc);
     }
 
-    pub fn block(parser: *Parser) void {
+    pub fn block(parser: *Parser, scope: *ScopeTable) void {
         if (!parser.match(.tok_left_brace)) {
             parser.reportError(parser.peekPrev().loc, "Expected '{{' at end of statement, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
         }
         while ((parser.peek().type != .tok_right_brace) and (parser.peek().type != .tok_eof)) {
             switch (parser.peek().type) {
                 .tok_var => {
-                    parser.ast_roots.append(parser.varStatement()) catch |err| {
-                        std.debug.print("Unable to append var statement ast node to root list: {}", .{err});
-                    };
+                    scope.appendNode(parser.varStatement());
                 },
                 .tok_print => {
-                    parser.ast_roots.append(parser.printStatement()) catch |err| {
-                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
-                    };
+                    scope.appendNode(parser.printStatement());
                 },
                 .tok_return => {
-                    parser.ast_roots.append(parser.functionReturn()) catch |err| {
-                        std.debug.print("Unable to append print statement ast node to root list: {}", .{err});
-                    };
+                    scope.appendNode(parser.functionReturn());
+                },
+                .tok_if => {
+                    scope.appendNode(parser.ifStatement());
                 },
                 else => {
-                    const current = parser.token_pool.items[parser.current];
-                    _ = current;
-                    const next = parser.token_pool.items[parser.current + 1];
-                    _ = next;
-                    parser.ast_roots.append(parser.expressionStatement()) catch |err| {
-                        std.debug.print("Unable to append expression statement ast node to root list: {}", .{err});
-                    };
+                    scope.appendNode(parser.expressionStatement());
                 },
             }
         }
@@ -398,13 +394,40 @@ pub const Parser = struct {
 
         const return_symbol_type: SymbolType = typeTokenToSymbolType(fn_return_type_token);
 
-        const start = parser.ast_roots.items.len;
-        parser.block();
-        const end = parser.ast_roots.items.len;
+        const scope_idx = MultiScopeTable.createScope();
+        const scope = &MultiScopeTable.table.items[scope_idx];
+        parser.block(scope);
+
         const fn_name_node = parser.ast.addLiteralNode(.ast_identifier, nan_u32, fn_name_token.loc);
-        const fn_idx = FnTable.appendFunction(.{ .name_node = fn_name_node, .return_type = return_symbol_type, .parameter_start = parameter_start, .parameter_end = parameter_start + parameter_size, .body_nodes_start = start, .body_nodes_end = end });
+        const fn_idx = FnTable.appendFunction(.{ .name_node = fn_name_node, .return_type = return_symbol_type, .parameter_start = parameter_start, .parameter_end = parameter_start + parameter_size, .scope_idx = scope_idx });
         const loc: LocInfo = .{ .start = fn_token.loc.start, .end = fn_return_type_token.loc.end, .line = fn_token.loc.line };
         return parser.ast.addLiteralNode(.ast_fn_block, fn_idx, loc);
+    }
+
+    fn ifStatement(parser: *Parser) u32 {
+        const if_token = parser.consume();
+        if(!parser.match(.tok_left_paren)){
+            parser.reportError(parser.peekPrev().loc, "Expected '(' after 'if', found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
+        }
+        const expr = parser.expression();
+        if(!parser.match(.tok_right_paren)){
+            parser.reportError(parser.peekPrev().loc, "Expected ')' after expression, found '{s}'.\n", .{parser.peekPrev().type.str()}, true);
+        }
+        const if_scope_idx = MultiScopeTable.createScope();
+        const if_scope = &MultiScopeTable.table.items[if_scope_idx];
+        parser.block(if_scope);
+       
+        var else_scope_idx: usize = nan_u64;
+        if(parser.match(.tok_else)){
+            else_scope_idx = MultiScopeTable.createScope();
+            const else_scope = &MultiScopeTable.table.items[else_scope_idx];
+            parser.block(else_scope);
+            
+        }
+        const if_symbol: IfSymbol = .{.if_scope_idx = if_scope_idx, .else_scope_idx = else_scope_idx};
+        const if_idx = IfTable.appendIf(if_symbol);
+        const loc: LocInfo = .{ .start = if_token.loc.start, .end = if_token.loc.end, .line = if_token.loc.line };
+        return parser.ast.addUnaryNode(.ast_if, if_idx, expr, loc);
     }
 
     pub fn reportError(parser: *Parser, loc: LocInfo, comptime str: []const u8, args: anytype, exit: bool) void {

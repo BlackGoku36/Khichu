@@ -142,8 +142,7 @@ pub const FnSymbol = struct {
     return_type: Type,
     parameter_start: usize,
     parameter_end: usize,
-    body_nodes_start: usize,
-    body_nodes_end: usize,
+    scope_idx: usize,
 };
 
 pub const FnParameterSymbol = struct {
@@ -199,7 +198,8 @@ pub const FnTable = struct {
                 std.debug.print("Parameter {d}: {any}\n", .{ param_idx, parameters.items[param_idx].parameter_type });
             }
             std.debug.print("nodes: ", .{});
-            for (function.body_nodes_start..function.body_nodes_end) |node_idx| {
+            const scope_table = MultiScopeTable.table.items[function.scope_idx];
+            for(scope_table.table.items) |node_idx|{
                 std.debug.print("{d}, ", .{node_idx});
             }
             std.debug.print("\n", .{});
@@ -209,5 +209,81 @@ pub const FnTable = struct {
     pub fn destroyTable() void {
         table.deinit();
         parameters.deinit();
+    }
+};
+
+pub const IfSymbol = struct {
+    if_scope_idx: usize,
+    else_scope_idx: usize,
+};
+
+pub const IfTable = struct {
+    pub var table: std.ArrayList(IfSymbol) = undefined;
+
+    pub fn createTable(allocator: std.mem.Allocator) void {
+        table = std.ArrayList(IfSymbol).init(allocator);
+    }
+
+    pub fn appendIf(if_symbol: IfSymbol) usize {
+        table.append(if_symbol) catch |err| {
+            std.debug.print("Unable to create entry in FnTable: {}", .{err});
+        };
+        return table.items.len - 1;
+    }
+
+    pub fn printIfs() void {
+        for (0.., table.items) |i, if_symbol| {
+            std.debug.print("{d}. if scope: {d}\n", .{i, if_symbol.if_scope_idx});
+            std.debug.print("{d}. else scope: {d}\n", .{i, if_symbol.else_scope_idx});
+        }
+    }
+
+    pub fn destroyTable() void {
+        table.deinit();
+    }
+
+};
+
+pub const ScopeTable = struct {
+    table: std.ArrayList(usize) = undefined,
+
+    pub fn init(allocator: std.mem.Allocator) ScopeTable {
+        return .{
+            .table = std.ArrayList(usize).init(allocator),
+        };
+    }
+
+    pub fn appendNode(scope: *ScopeTable, node: usize) void {
+        scope.table.append(node) catch | err | {
+            std.debug.print("Unable to create node entry in scope table: {}", .{err});
+        }; 
+    }
+    
+    pub fn destroyTable(scope: *const ScopeTable) void {
+        scope.table.deinit();
+    }
+};
+
+pub const MultiScopeTable = struct {
+    pub var table: std.ArrayList(ScopeTable) = undefined;
+    var allocator: std.mem.Allocator = undefined;
+
+    pub fn createTable(allocator_: std.mem.Allocator) void {
+        table = std.ArrayList(ScopeTable).init(allocator_);
+        allocator = allocator_;
+    }
+
+    pub fn createScope() usize {
+        table.append(ScopeTable.init(allocator)) catch |err| {
+            std.debug.print("Unable to create scope entry in multi-scope table: {}", .{err});
+        };
+        return table.items.len - 1;
+    }
+    
+    pub fn destroyTable() void {
+        for (table.items) |scope| {
+            scope.destroyTable();
+        }
+        table.deinit();
     }
 };

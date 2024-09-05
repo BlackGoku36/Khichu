@@ -76,6 +76,9 @@ pub const Local = struct {
 pub const Inst = u8;
 pub const OpCode = enum(u8) {
     // Control Instruction
+    @"if" = 0x04,
+    @"else" = 0x05,
+    end = 0x0B,
     call = 0x10,
     @"return" = 0x0F,
     // Variable Instruction

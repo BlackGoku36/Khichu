@@ -6,6 +6,8 @@ const SymbolTable = tables.SymbolTable;
 const ExprTypeTable = tables.ExprTypeTable;
 const FnTable = tables.FnTable;
 const FnCallTable = tables.FnCallTable;
+const IfTable = tables.IfTable;
+const MultiScopeTable = tables.MultiScopeTable;
 const analyzer = @import("analyzer.zig");
 
 const wasm_codegen = @import("wasm/codegen.zig");
@@ -37,6 +39,8 @@ pub fn main() !void {
     ExprTypeTable.createTable(allocator);
     FnTable.createTable(allocator);
     FnCallTable.createTable(allocator);
+    IfTable.createTable(allocator);
+    MultiScopeTable.createTable(allocator);
 
     var parser = Parser.init(allocator, tokenizer);
     defer parser.deinit();
@@ -69,6 +73,9 @@ pub fn main() !void {
 
     std.debug.print("\n------ FN CALL TABLE -------\n", .{});
     FnCallTable.printFunctions(source, parser.ast);
+
+    std.debug.print("\n------ IFs TABLE -------\n", .{});
+    IfTable.printIfs();
     
     std.debug.print("\n-----------------------------\n", .{});
 
@@ -92,6 +99,8 @@ pub fn main() !void {
     SymbolTable.destroyTables();
     FnTable.destroyTable();
     FnCallTable.destroyTable();
+    IfTable.destroyTable();
+    MultiScopeTable.destroyTable();
     //
     //    var vm = VM.init(allocator, bytecode_pool);
     //    defer vm.deinit();
