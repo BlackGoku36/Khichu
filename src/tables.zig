@@ -120,15 +120,23 @@ pub const FnCallTable = struct {
         return table.items.len - 1;
     }
 
-    pub fn printFunctions(source: []u8, ast: Ast) void {
-        for (0.., table.items) |i, function| {
-            const name = ast.nodes.items[function.name_node];
-            std.debug.print("Function: {d}: {s}\n", .{ i, source[name.loc.start..name.loc.end] });
-            const args_len = function.arguments_len;
+    pub fn printFunctions(source: []u8, ast: *Ast) void {
+        for (0.., table.items) |i, function_call| {
+            const name = ast.nodes.items[function_call.name_node];
+            const args_len = function_call.arguments_len;
+            std.debug.print("Idx: {d}\n", .{i});
+            std.debug.print("Name: {s}\n", .{source[name.loc.start..name.loc.end]});
+            std.debug.print("Argument: \n   Size: {d}\n", .{args_len});
+            std.debug.print("   Nodes: \n", .{});
             for (0..args_len) |arg_idx| {
-                const arg_name = ast.nodes.items[function.arguments[arg_idx]];
-                std.debug.print("Argument: {d}: {s}\n", .{ arg_idx, source[arg_name.loc.start..arg_name.loc.end] });
+                const arg_node_idx = function_call.arguments[arg_idx];
+                const arg_name = ast.nodes.items[arg_node_idx];
+                std.debug.print("       {d}: {d} ({s})\n", .{ arg_idx, arg_node_idx, source[arg_name.loc.start..arg_name.loc.end] });
+                std.debug.print("       Ast:---\n", .{});
+                ast.print(arg_node_idx, 0, 5);
+                std.debug.print("       ---\n", .{});
             }
+            std.debug.print("\n-\n\n", .{});
         }
     }
 
@@ -193,16 +201,20 @@ pub const FnTable = struct {
     pub fn printFunctions(source: []u8, ast: Ast) void {
         for (0.., table.items) |i, function| {
             const name = ast.nodes.items[function.name_node];
-            std.debug.print("Function {d}: {s}\n", .{ i, source[name.loc.start..name.loc.end] });
+            std.debug.print("Idx: {d}\n", .{i});
+            std.debug.print("Name: {s}\n", .{source[name.loc.start..name.loc.end]});
+            std.debug.print("Parameter: \n   Size: {d}\n", .{function.parameter_end - function.parameter_start});
+            std.debug.print("   Types:\n", .{});
             for (function.parameter_start..function.parameter_end) |param_idx| {
-                std.debug.print("Parameter {d}: {any}\n", .{ param_idx, parameters.items[param_idx].parameter_type });
+                std.debug.print("       {d}: {s}\n", .{ param_idx, parameters.items[param_idx].parameter_type.str() });
             }
-            std.debug.print("nodes: ", .{});
+            std.debug.print("Return type: {s}\n", .{function.return_type.str()});
+            std.debug.print("Scope's nodes: ", .{});
             const scope_table = MultiScopeTable.table.items[function.scope_idx];
             for (scope_table.table.items) |node_idx| {
                 std.debug.print("{d}, ", .{node_idx});
             }
-            std.debug.print("\n", .{});
+            std.debug.print("\n-\n\n", .{});
         }
     }
 

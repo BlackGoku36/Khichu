@@ -154,8 +154,7 @@ pub const Ast = struct {
     }
 
     pub fn indent(level: u32) void {
-        for (0..level) |i| {
-            _ = i;
+        for (0..level)|_| {
             std.debug.print("{s}", .{"  "});
         }
     }
@@ -164,13 +163,18 @@ pub const Ast = struct {
         const ast_node = ast.nodes.items[root_idx];
         switch (ast_node.type) {
             .ast_var_stmt => {
-                const symbol_idx = ast_node.idx;
-                const symbol_entry = SymbolTable.varTable.get(symbol_idx);
-                ast.print(symbol_entry.expr_node, left, level);
+                // TODO: print var_stmt expression too
+                //const symbol_idx = ast_node.idx;
+                //const symbol_entry = SymbolTable.varTable.get(symbol_idx);
+                //ast.print(symbol_entry.expr_node, left, level);
+                ast.print(root_idx, left, level);
             },
             .ast_print_stmt => {
-                const left_idx = ast_node.left;
-                ast.print(left_idx, left, level);
+                // TODO: print print_stmt expression too
+                //const left_idx = ast_node.left;
+                //ast.print(left_idx, left, level);
+                //indent(level);
+                ast.print(root_idx, left, level);
             },
             .ast_assign_stmt => {
                 const right_idx = ast_node.right;

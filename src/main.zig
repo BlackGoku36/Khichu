@@ -73,7 +73,7 @@ pub fn main() !void {
     FnTable.printFunctions(source, parser.ast);
 
     std.debug.print("\n------ FN CALL TABLE -------\n", .{});
-    FnCallTable.printFunctions(source, parser.ast);
+    FnCallTable.printFunctions(source, &parser.ast);
 
     std.debug.print("\n------ IFs TABLE -------\n", .{});
     IfTable.printIfs();
