@@ -1,12 +1,13 @@
 fn main() void {
     var x: int = 0;
     while (x < 5) {
-        print(x);
-        var y: int = 0;
-        while(y < 10){
-            print(y);
-            y = y + 1;
+        if(x > 2){
+            printInt(x);
         }
         x = x + 1;
     }
+}
+
+fn printInt(a: int) void {
+    print(a);
 }

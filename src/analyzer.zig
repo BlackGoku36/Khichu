@@ -18,6 +18,7 @@ const MultiScopeTable = tables.MultiScopeTable;
 const Parser = @import("parser.zig").Parser;
 
 const nan_u32 = 0x7FC00000;
+const nan_u64 = 0x7FF8000000000000;
 
 pub fn analyse_type_semantic(parser: *Parser, curr_node: usize) void {
     var node = &parser.ast.nodes.items[curr_node];
@@ -283,12 +284,14 @@ pub fn analyse_block(parser: *Parser, root_idx: usize) void {
             analyse_type_semantic(parser, ast_node.left);
             const if_symbol = IfTable.table.items[if_idx];
             const if_scope = MultiScopeTable.table.items[if_symbol.if_scope_idx];
-            const else_scope = MultiScopeTable.table.items[if_symbol.else_scope_idx];
             for (if_scope.table.items) |idx| {
                 analyse_block(parser, idx);
             }
-            for (else_scope.table.items) |idx| {
-                analyse_block(parser, idx);
+            if (if_symbol.else_scope_idx != nan_u64) {
+                const else_scope = MultiScopeTable.table.items[if_symbol.else_scope_idx];
+                for (else_scope.table.items) |idx| {
+                    analyse_block(parser, idx);
+                }
             }
         },
         .ast_while => {
@@ -318,15 +321,17 @@ pub fn analyze(parser: *Parser) void {
             },
             .ast_if => {
                 const if_symbol_idx = ast_node.idx;
-                const if_table = IfTable.table.items[if_symbol_idx];
+                const if_symbol = IfTable.table.items[if_symbol_idx];
                 //const fn_block = FnTable.table.items[fn_block_idx];
-                const if_scope = MultiScopeTable.table.items[if_table.if_scope_idx];
+                const if_scope = MultiScopeTable.table.items[if_symbol.if_scope_idx];
                 for (if_scope.table.items) |idx| {
                     analyse_block(parser, idx);
                 }
-                const else_scope = MultiScopeTable.table.items[if_table.else_scope_idx];
-                for (else_scope.table.items) |idx| {
-                    analyse_block(parser, idx);
+                if (if_symbol.else_scope_idx != nan_u64) {
+                    const else_scope = MultiScopeTable.table.items[if_symbol.else_scope_idx];
+                    for (else_scope.table.items) |idx| {
+                        analyse_block(parser, idx);
+                    }
                 }
             },
             else => analyse_block(parser, root_idx),
