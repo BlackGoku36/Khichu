@@ -296,7 +296,7 @@ pub const Tokenizer = struct {
     pub fn print(tokenizer: *Tokenizer) void {
         for (0..tokenizer.pool.items.len) |i| {
             const token = tokenizer.pool.items[i];
-            std.debug.print("Token, type: {s}, src: {s}\n", .{ token.type.str(), tokenizer.source[token.loc.start..token.loc.end] });
+            std.debug.print("Type: {s}, Src: '{s}'\n", .{ token.type.str(), tokenizer.source[token.loc.start..token.loc.end] });
         }
     }
 

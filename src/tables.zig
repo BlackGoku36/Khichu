@@ -65,8 +65,8 @@ pub const SymbolTable = struct {
     }
 
     pub fn printVar() void {
-        for (varTable.items(.name), varTable.items(.type), varTable.items(.expr_node)) |name, var_type, expr_node| {
-            std.debug.print("{s}, {s}, {d}\n", .{ name, var_type.str(), expr_node });
+        for (0.., varTable.items(.name), varTable.items(.type), varTable.items(.expr_node)) |idx, name, var_type, expr_node| {
+            std.debug.print("{d})\nName: {s}\nVar Type: {s}\nExpr Node: {d}\n", .{ idx, name, var_type.str(), expr_node });
         }
     }
 };
@@ -91,7 +91,7 @@ pub const ExprTypeTable = struct {
 
     pub fn printExprTypes() void {
         for (0.., table.items) |i, expr_type| {
-            std.debug.print("{d}: {s}\n", .{ i, expr_type.type.str() });
+            std.debug.print("{d}) Type: {s}\n", .{ i, expr_type.type.str() });
         }
     }
 
@@ -124,7 +124,7 @@ pub const FnCallTable = struct {
         for (0.., table.items) |i, function_call| {
             const name = ast.nodes.items[function_call.name_node];
             const args_len = function_call.arguments_len;
-            std.debug.print("Idx: {d}\n", .{i});
+            std.debug.print("{d})\n", .{i});
             std.debug.print("Name: {s}\n", .{source[name.loc.start..name.loc.end]});
             std.debug.print("Argument: \n   Size: {d}\n", .{args_len});
             std.debug.print("   Nodes: \n", .{});
@@ -201,7 +201,7 @@ pub const FnTable = struct {
     pub fn printFunctions(source: []u8, ast: Ast) void {
         for (0.., table.items) |i, function| {
             const name = ast.nodes.items[function.name_node];
-            std.debug.print("Idx: {d}\n", .{i});
+            std.debug.print("{d})\n", .{i});
             std.debug.print("Name: {s}\n", .{source[name.loc.start..name.loc.end]});
             std.debug.print("Parameter: \n   Size: {d}\n", .{function.parameter_end - function.parameter_start});
             std.debug.print("   Types:\n", .{});
@@ -245,8 +245,9 @@ pub const IfTable = struct {
 
     pub fn printIfs() void {
         for (0.., table.items) |i, if_symbol| {
-            std.debug.print("{d}. if scope: {d}\n", .{ i, if_symbol.if_scope_idx });
-            std.debug.print("{d}. else scope: {d}\n", .{ i, if_symbol.else_scope_idx });
+            std.debug.print("{d})\n", .{i});
+            std.debug.print("If Scope Idx: {d}\n", .{ if_symbol.if_scope_idx });
+            std.debug.print("Else Scope Idx: {d}\n", .{ if_symbol.else_scope_idx });
         }
     }
 

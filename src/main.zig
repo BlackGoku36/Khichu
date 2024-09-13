@@ -46,8 +46,6 @@ pub fn main() !void {
     defer parser.deinit();
 
     parser.parse();
-    std.debug.print("\n------ AST ------\n", .{});
-    parser.ast.print_ast(&parser.ast_roots);
     //    for (parser.ast_roots.items) |roots| {
     //        parser.ast.print(roots, 0, 0);
     //    }
@@ -63,7 +61,10 @@ pub fn main() !void {
     //        parser.ast.print(roots, 0, 0);
     //    }
 
-    std.debug.print("\n------ SYMBOL TABLE (VAR)------\n", .{});
+    std.debug.print("\n------ AST ------\n", .{});
+    parser.ast.print_ast(&parser.ast_roots);
+
+    std.debug.print("\n------ VAR SYMBOL TABLE ------\n", .{});
     SymbolTable.printVar();
 
     std.debug.print("\n------ EXPR TYPE TABLE -------\n", .{});
