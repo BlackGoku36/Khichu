@@ -154,7 +154,7 @@ pub const Ast = struct {
     }
 
     pub fn indent(level: u32) void {
-        for (0..level)|_| {
+        for (0..level) |_| {
             std.debug.print("{s}", .{"  "});
         }
     }
@@ -240,7 +240,7 @@ pub const Ast = struct {
         }
     }
 
-    pub fn print_ast(ast: *Ast, ast_roots: *const std.ArrayList(u32)) void {
+    pub fn printAst(ast: *Ast, ast_roots: *const std.ArrayList(u32)) void {
         for (ast_roots.items) |root_idx| {
             const ast_node = ast.nodes.items[root_idx];
             switch (ast_node.type) {

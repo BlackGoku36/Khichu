@@ -33,36 +33,33 @@ pub fn main() !void {
     tokenizer.tokenize();
     std.debug.print("\n------ TOKENS ------\n", .{});
     tokenizer.print();
-    std.debug.print("\n", .{});
 
     SymbolTable.createTables(allocator);
+    defer SymbolTable.destroyTable();
+
     ExprTypeTable.createTable(allocator);
+    defer ExprTypeTable.destroyTable();
+
     FnTable.createTable(allocator);
+    defer FnTable.destroyTable();
+
     FnCallTable.createTable(allocator);
+    defer FnCallTable.destroyTable();
+
     IfTable.createTable(allocator);
+    defer IfTable.destroyTable();
+
     MultiScopeTable.createTable(allocator);
+    defer MultiScopeTable.destroyTable();
 
     var parser = Parser.init(allocator, tokenizer);
     defer parser.deinit();
 
     parser.parse();
-    //    for (parser.ast_roots.items) |roots| {
-    //        parser.ast.print(roots, 0, 0);
-    //    }
-    //    for (FnTable.table.items) |fn_block|{
-    //        for(fn_block.body_nodes_start..fn_block.body_nodes_end) |node_i| {
-    //            //const fn_body_node = parser.ast.nodes.items[node_i];
-    //            parser.ast.print(@intCast(node_i), 0, 0);
-    //        }
-    //    }
     analyzer.analyze(&parser);
-    //    std.debug.print("\n------ NEW AST ------\n", .{});
-    //    for (parser.ast_roots.items) |roots| {
-    //        parser.ast.print(roots, 0, 0);
-    //    }
 
     std.debug.print("\n------ AST ------\n", .{});
-    parser.ast.print_ast(&parser.ast_roots);
+    parser.ast.printAst(&parser.ast_roots);
 
     std.debug.print("\n------ VAR SYMBOL TABLE ------\n", .{});
     SymbolTable.printVar();
@@ -85,29 +82,4 @@ pub fn main() !void {
     defer out_file.close();
 
     try wasm_codegen.outputFile(out_file, &parser, source, allocator);
-
-    //    var bytecode_pool = ByteCodePool.init(allocator);
-    //    defer bytecode_pool.deinit();
-    //
-    //    for (parser.ast_roots.items) |roots| {
-    //        codegen.generateCode(&parser.ast, roots, source, &bytecode_pool);
-    //    }
-    //
-    //    std.debug.print("\n------ BYTECODE ------\n", .{});
-    //    bytecode_pool.print();
-    //
-    ExprTypeTable.destroyTable();
-    SymbolTable.destroyTables();
-    FnTable.destroyTable();
-    FnCallTable.destroyTable();
-    IfTable.destroyTable();
-    MultiScopeTable.destroyTable();
-    //
-    //    var vm = VM.init(allocator, bytecode_pool);
-    //    defer vm.deinit();
-    //    std.debug.print("\n------ VM ------\n", .{});
-    //    try vm.run();
-    //
-    //    std.debug.print("\n------ GLOBAL VAR TABLE ------\n", .{});
-    //    bytecode_pool.global_var_tables.print();
 }

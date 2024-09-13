@@ -35,7 +35,7 @@ pub const SymbolTable = struct {
         allocator = allocator_;
     }
 
-    pub fn destroyTables() void {
+    pub fn destroyTable() void {
         varTable.deinit(allocator);
     }
 
@@ -246,8 +246,8 @@ pub const IfTable = struct {
     pub fn printIfs() void {
         for (0.., table.items) |i, if_symbol| {
             std.debug.print("{d})\n", .{i});
-            std.debug.print("If Scope Idx: {d}\n", .{ if_symbol.if_scope_idx });
-            std.debug.print("Else Scope Idx: {d}\n", .{ if_symbol.else_scope_idx });
+            std.debug.print("If Scope Idx: {d}\n", .{if_symbol.if_scope_idx});
+            std.debug.print("Else Scope Idx: {d}\n", .{if_symbol.else_scope_idx});
         }
     }
 
